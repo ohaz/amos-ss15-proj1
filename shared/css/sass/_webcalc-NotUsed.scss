@@ -1,0 +1,82 @@
+// Header web calculators not used - SVL version
+
+
+
+
+.webcalc-header {
+	border-bottom: 1px solid #2a2c2d;
+	height: 43px;
+	margin: 0;
+	color: white;
+	overflow: hidden;
+	background: #86888b; /* Old browsers */
+	background: -moz-linear-gradient(top, #86888b 0%, #404245 100%); /* FF3.6+ */
+	background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#86888b), color-stop(100%,#404245)); /* Chrome,Safari4+ */
+	background: -webkit-linear-gradient(top, #86888b 0%,#404245 100%); /* Chrome10+,Safari5.1+ */
+	background: -o-linear-gradient(top, #86888b 0%,#404245 100%); /* Opera 11.10+ */
+	background: -ms-linear-gradient(top, #86888b 0%,#404245 100%); /* IE10+ */
+	background: linear-gradient(to bottom, #86888b 0%,#404245 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#86888b', endColorstr='#404245',GradientType=0 ); /* IE6-9 */
+}
+
+.webcalc-header-back {
+	width: 40%;
+
+	height: 43px;
+	float: left;	
+	background: url(images/WebApp_Zurueck.png) no-repeat 5px 50%;
+	padding-left: 14px;
+	@media all and (-webkit-min-device-pixel-ratio: 2) {
+    background: url(images/WebApp_Zurueck@2x.png) no-repeat 5px 50%;
+    background-size: 6px 9px;
+	overflow: hidden;
+
+    }
+	a, a:visited, a:hover {
+		color: white;
+		text-decoration: none;
+		display: block;
+		curser: pointer;
+		font-size: 140%;
+		height: 43px;
+		line-height: 43px;
+		overflow: hidden;
+
+		background: url(images/WebApp_Rechner.png) no-repeat 0 50%;
+		padding-left: 30px;
+		@media all and (-webkit-min-device-pixel-ratio: 2) {
+	    background: url(images/WebApp_Rechner@2x.png) no-repeat 0 50%;
+	    background-size: 25px 36px;
+	    }
+	}
+	
+}	
+.webcalc-header-icons {
+	float: right;
+	overflow: hidden;
+	padding-right: 14px;
+	padding-top: 0;
+	curser:pointer;
+
+}
+.webcalc-header-icon-items {
+	float: right;
+	overflow: hidden;
+
+	height: 43px;
+	width: 20px;
+	padding-left: 14px;
+	background-repeat: no-repeat;
+	background-position: right 50%;
+	@media all and (-webkit-min-device-pixel-ratio: 2) {
+    background-size: 20px 20px;
+	background-repeat: no-repeat;
+	background-position: right 50%;
+    }
+}
+.webcalc-icon-settings {
+	background-image: url(images/WebApp_Einstellungen.png);
+	@media all and (-webkit-min-device-pixel-ratio: 2) {
+    background-image: url(WebApp_Einstellungen@2x.png);
+    }
+}
