@@ -1,0 +1,21 @@
+Connect to instance:
+
+ssh -i my-key-pair.pem ubuntu@<public-dns-from-instance>
+
+copy config shell script to instance
+
+scp -i my-key-pair.pem <file> ubuntu@<public-dns-from-instance>:/home/ubuntu
+
+
+Steps:
+
+python selenium.py create
+
+copy shell script to instance via scp
+
+start setup_selenium.sh on ec2 instance
+
+
+After use terminate instance via: python selenium.py terminate <ec2-instance-id>
+
+
