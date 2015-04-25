@@ -57,7 +57,7 @@ define({
 	},
 
 	// Non-functional test suite(s) to run in each browser
-	suites: [ 'tests/unit/hello' ],
+	suites: [ /*'tests/unit/hello'*/ ],
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [ 'tests/functional/index-web' ],
