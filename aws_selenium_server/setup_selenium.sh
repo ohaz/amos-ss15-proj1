@@ -21,7 +21,7 @@ sudo sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /et
 sudo apt-get update
 sudo apt-get -y install google-chrome-stable
 
-wget http://chromedriver.googlecode.com/files/chromedriver_linux64_23.0.1240.0.zip 
+wget http://chromedriver.storage.googleapis.com/2.15/chromedriver_linux64.zip
 sudo apt-get -y install unzip
 unzip chromedriver_linux64_23.0.1240.0.zip
 sudo cp chromedriver /usr/local/bin
@@ -33,7 +33,7 @@ wget http://selenium-release.storage.googleapis.com/2.45/selenium-server-standal
 Xvfb :99 -screen 0 1024x768x24 -ac 2>&1 >/dev/null &
 export DISPLAY=:99
 
-java -jar selenium-server-standalone-2.45.0.jar -port 8080 –maxSession 10
+java -jar selenium-server-standalone-2.45.0.jar -port 4444 –maxSession 10
 
 echo "Config of selenium server successfull..."
 
