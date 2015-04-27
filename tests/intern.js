@@ -15,7 +15,7 @@ define({
 	// Note that the `build` capability will be filled in with the current commit ID from the Travis CI environment
 	// automatically
 	capabilities: {
-		'selenium-version': '2.41.0'
+		'selenium-version': '2.45.0'
 	},
 
 	// Browsers to run integration testing against. Note that version numbers must be strings if used with Sauce
@@ -27,12 +27,14 @@ define({
 
 	// Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
 	maxConcurrency: 3,
-	
-	// Whether or not to start Sauce Connect before running tests
-	useSauceConnect: false,
 
 	// Name of the tunnel class to use for WebDriver tests
-	//tunnel: 'SauceLabsTunnel',
+	tunnel: 'NullTunnel',
+
+	tunnelOptions: {
+		clientUrl:'http://ec2-52-10-189-29.us-west-2.compute.amazonaws.com:4444/wd/hub/',
+		port: 4444
+	},
 
 	// Connection information for the remote WebDriver service. If using Sauce Labs, keep your username and password
 	// in the SAUCE_USERNAME and SAUCE_ACCESS_KEY environment variables unless you are sure you will NEVER be
@@ -57,7 +59,7 @@ define({
 	},
 
 	// Non-functional test suite(s) to run in each browser
-	suites: [ 'tests/unit/hello' ],
+	suites: [ /*'tests/unit/hello'*/ ],
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [ 'tests/functional/index-web' ],
