@@ -7,13 +7,13 @@ import sys
 import time
 
 # specify AWS keys
-auth = {"aws_access_key_id": "<user-id>", "aws_secret_access_key": "<secret_key>"}
+auth = {"aws_access_key_id": "<access_key>", "aws_secret_access_key": "<secret_key>"}
 
 def main():
 	# read arguments from the command line and 
 	# check whether at least two elements were entered
 	if len(sys.argv) < 2:
-		print "Usage: python aws.py {start|stop}\n"
+		print "start, stop, list, create, terminate, status, security\n"
 		sys.exit(0)
 	elif len(sys.argv) == 3:
 		action = sys.argv[1]
@@ -22,7 +22,11 @@ def main():
 		action = sys.argv[1] 
 
 	if action == "stop":
-		stopInstance()
+		stopInstance(instanceId)
+	elif action == "start":
+		startInstance(instanceId)
+	elif action == "list":
+		listInstances()
 	elif action == "create":
 		createSeleniumInstance()
 	elif action == "terminate":
@@ -33,6 +37,58 @@ def main():
 		showSecurityGroups()
 	else:
 		print "Usage: python aws.py {start|stop or create}\n"
+
+
+def listInstances():
+
+	ec2conn = boto.ec2.connect_to_region("us-west-2", **auth)
+
+	reservations= ec2conn.get_all_reservations()
+
+	for reservation in reservations:
+		print "ID: " + reservation.instances[0].id
+		print "DNS: " + reservation.instances[0].public_dns_name
+		print "Status: " + reservation.instances[0].update()
+		print "-----------------------------"
+
+def startInstance(instanceId):
+
+	ec2conn = boto.ec2.connect_to_region("us-west-2", **auth)
+
+	instanceArray= ec2conn.get_only_instances(instance_ids=[instanceId])
+	instance = instanceArray[0]
+
+	instance.start()
+
+	print('Waiting for instance to start...')
+	# Check up on its status every so often
+	status = instance.update()
+	while status == 'pending':
+		time.sleep(10)
+		status = instance.update()
+	if status == 'running':
+		print "Instance-ID: " + instance.id
+		print "Pulic-DNS: " + instance.public_dns_name
+	else:
+		print('Instance status: ' + status)
+
+def stopInstance(instanceId):
+
+	ec2conn = boto.ec2.connect_to_region("us-west-2", **auth)
+
+	instanceArray= ec2conn.get_only_instances(instance_ids=[instanceId])
+	instance = instanceArray[0]
+
+	instance.stop()
+
+	status = instance.update()
+	print('Waiting for instance to stop...')
+	while not status == "stopped":
+		time.sleep(10)
+		status = instance.update()
+
+	print "Instance " + instanceId + " stopped successfully"
+
 
 
 def showSecurityGroups():
