@@ -106,6 +106,16 @@ define([
                     assert.strictEqual(text, '404,50',
                         'SV-SUMME should be 404,50 for a brutto 2000');
                 });
+        },
+
+        '1_2015_netto': function () {
+            return this.remote
+                .findById('shared_widgets_NumberInput_2')
+                .getProperty('value')
+                .then(function (text) {
+                    assert.strictEqual(text, '1.360,66',
+                        'Netto should be 1.360,66 for a netto 2000');
+                });
         }
 
     });
