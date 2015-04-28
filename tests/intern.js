@@ -22,19 +22,20 @@ define({
 	// OnDemand. Options that will be permutated are browserName, version, platform, and platformVersion; any other
 	// capabilities options specified for an environment will be copied as-is
 	environments: [
+
 		{ browserName: 'chrome' }
 	],
 
 	// Maximum number of simultaneous integration tests that should be executed on the remote WebDriver service
 	maxConcurrency: 3,
 
-	// Name of the tunnel class to use for WebDriver tests
+	/*// Name of the tunnel class to use for WebDriver tests
 	tunnel: 'NullTunnel',
 
 	tunnelOptions: {
-		clientUrl:'http://ec2-52-10-189-29.us-west-2.compute.amazonaws.com:4444/wd/hub/',
+		clientUrl:'http://ec2-52-10-82-161.us-west-2.compute.amazonaws.com:4444/wd/hub/',
 		port: 4444
-	},
+	},*/
 
 	// Connection information for the remote WebDriver service. If using Sauce Labs, keep your username and password
 	// in the SAUCE_USERNAME and SAUCE_ACCESS_KEY environment variables unless you are sure you will NEVER be
@@ -62,7 +63,7 @@ define({
 	suites: [ /*'tests/unit/hello'*/ ],
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
-	functionalSuites: [ 'tests/functional/index-web' ],
+	functionalSuites: [ 'tests/functional/index-web',  'tests/functional/index-web_rev'],
 
 	// A regular expression matching URLs to files that should not be included in code coverage analysis
 	excludeInstrumentation: /^(?:tests|node_modules)\//
