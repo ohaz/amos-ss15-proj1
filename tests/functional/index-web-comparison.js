@@ -22,12 +22,13 @@ define([
                     .pressKeys('\uE007')
                     .end()
                 .findById('shared_widgets_Link_3')
-                .click();
+                    .click()
+                    .end()
         },
 
         'III-V': function () {
             return this.remote
-                .findById('shared_widgets_NumberOutput_34')
+                .findById('shared_widgets_NumberOutput_24')
                 .getVisibleText()
                 .then(function (text) {
                     assert.strictEqual(text, '450,71',
@@ -37,7 +38,7 @@ define([
 
         'V-III': function () {
             return this.remote
-                .findById('shared_widgets_NumberOutput_45')
+                .findById('shared_widgets_NumberOutput_25')
                 .getVisibleText()
                 .then(function (text) {
                     assert.strictEqual(text, '491,60',
@@ -47,7 +48,7 @@ define([
 
         'IV-IV': function () {
             return this.remote
-                .findById('shared_widgets_NumberOutput_46')
+                .findById('shared_widgets_NumberOutput_26')
                 .getVisibleText()
                 .then(function (text) {
                     assert.strictEqual(text, '418,89',
@@ -57,7 +58,7 @@ define([
 
         'IV-IV-2': function () {
             return this.remote
-                .findById('shared_widgets_NumberOutput_48')
+                .findById('shared_widgets_NumberOutput_28')
                 .getVisibleText()
                 .then(function (text) {
                     assert.strictEqual(text, '418,89',
