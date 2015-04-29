@@ -1,0 +1,89 @@
+button,
+.button {
+  @include control;
+  display: table;
+  padding: 0 8px;
+  border: 1px solid $c-button-border-color;
+  text-align: center;
+  cursor: pointer;
+
+  .button-label {
+    display: table-cell;
+    vertical-align: middle;
+    height: $l-control-height - 2px;
+  }
+
+  &.petrol {
+    color: $c-petrol;
+  }
+
+  &.bordered {
+    @include gradient-important;
+    border: 1px solid $c-button-important-border-color;
+
+    &.button-tapped  {
+      border: 1px solid $c-tab-highlight;
+      @include gradient-important-tapped;
+    }
+  }
+
+  &.btn-reset,
+  &.button--action {
+    @include gradient-reset;
+    border: 1px solid $c-button-reset-border-color;
+
+    &.button-tapped  {
+      border: 1px solid $c-tab-highlight;
+      @include gradient-reset-tapped;
+    }
+  }
+}
+
+button.button-tapped,
+.button.button-tapped,
+.button-tapped button,
+.button-tapped .button {
+  @include vertical-gradient(#9d9d9d, #a2a2a2, #9d9d9d);
+}
+
+button.petrol.button-tapped,
+.button.petrol.button-tapped,
+.button-tapped button.petrol,
+.button-tapped .button.petrol {
+  color: white;
+}
+
+.add-button {
+  display: block;
+  padding-left: 30px;
+
+  &:before {
+    content: "";
+    display: block;
+    width: 27px;
+    height: 27px;
+    position: absolute;
+    margin-left: -31px;
+    margin-top: 1px;
+    background-image: url(images/DATEV-symbols.png);
+    background-repeat: no-repeat;
+    background-position: 0 0;
+  }
+
+  @media all and (-webkit-min-device-pixel-ratio: 2) {
+    &:before {
+      @include sprite-size;
+      @include sprite-retina-symbols;
+    }
+  }
+
+  & .button {
+    text-align: left;
+    border-color: transparent;
+    background-color: transparent;
+  }
+
+  &.button-tapped .button {
+    color: #fff;
+  }
+}

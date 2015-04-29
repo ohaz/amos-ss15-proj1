@@ -1,0 +1,5 @@
+{
+  "name": "rechner-brutto-netto",
+  "version": "1.0",
+  "dojoBuild": "app.profile.js"
+}
