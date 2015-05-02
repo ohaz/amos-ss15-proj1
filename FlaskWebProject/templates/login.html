@@ -32,6 +32,7 @@
         </p>
         <button class="btn btn-sm btn-success" type="submit">Sign in</button>
         <p>{{ form.remember_me }} Remember Me</p>
+        <a href="{{ url_for('login_fb') }}">Sign in with FB</a>
         <a href="{{ url_for('register') }}">Register</a>
     </form>
 </div>
