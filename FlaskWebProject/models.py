@@ -1,15 +1,18 @@
 from FlaskWebProject import db
 
+
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
     email = db.Column(db.String(120), index=True, unique=True)
     password = db.Column(db.String)
+    sso = db.Column(db.String)  # none, google, facebook
 
-    def __init__(self, username, email, password):
+    def __init__(self, username, email, password, sso):
         self.username = username
         self.email = email
         self.password = password
+        self.sso = sso
 
     def is_authenticated(self):
         return True
