@@ -45,3 +45,6 @@ config.local.py
 config.azure.py
 config.google.py
 config.amazon.py
+
+#db file
+app.db
