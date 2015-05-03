@@ -33,5 +33,9 @@ $RECYCLE.BIN/
 # Mac desktop service store files
 .DS_Store
 
-# config file
+# config files
 config.py
+config.local.py
+config.azure.py
+config.google.py
+config.amazon.py
