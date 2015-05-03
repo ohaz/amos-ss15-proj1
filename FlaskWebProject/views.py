@@ -2,8 +2,8 @@
 Routes and views for the flask application.
 """
 
-from flask import render_template, send_from_directory, redirect, url_for, session, g, request, flash, request
-from FlaskWebProject import app, db, lm, oauth, facebook, google
+from flask import render_template, send_from_directory, redirect, url_for, session, g, request
+from FlaskWebProject import app, db, lm, facebook, google
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from werkzeug.routing import BaseConverter
 import os
@@ -37,9 +37,8 @@ def load_user(id):
 def before_request():
     g.user = current_user
 
+
 # Routes
-
-
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -48,6 +47,11 @@ def home():
     return render_template(
         'index.html',
     )
+
+
+'''
+UserName Password Login
+'''
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -103,13 +107,12 @@ def logout():
 
 
 '''
-OAuth2 Facebook
+OAuth2 Facebook Login
 '''
 
 
 @app.route('/login_fb', methods=['GET', 'POST'])
 def login_fb():
-    # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('facebook_authorized', _external=True)
     print callback_url
     return facebook.authorize(callback=callback_url)
@@ -126,7 +129,7 @@ def facebook_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
-        flash(u'There was a problem logging in.')
+        # TODO: excalate error to user: 'There was a problem logging in with Google.'
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = facebook.get('/me').data
@@ -143,7 +146,7 @@ def facebook_authorized(resp):
 
 
 '''
-OAuth2 Google
+OAuth2 Google Login
 '''
 
 
@@ -166,9 +169,8 @@ def google_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
-        flash(u'There was a problem logging in.')
+        # TODO: excalate error to user: 'There was a problem logging in with Google.'
         return redirect(next_url)
-    # session['oauth_token'] = (resp['access_token'], '')
     session['oauth_token'] = (resp['access_token'], '')
     user_data = google.get('/userinfo/v2/me').data
     user = User.query.filter(User.email == user_data['email']).first()
