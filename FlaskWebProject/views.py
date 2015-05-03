@@ -3,7 +3,7 @@ Routes and views for the flask application.
 """
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request, flash, request
-from FlaskWebProject import app, db, lm, oauth, facebook
+from FlaskWebProject import app, db, lm, oauth, facebook, google
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from werkzeug.routing import BaseConverter
 import os
@@ -102,9 +102,14 @@ def logout():
     return redirect(url_for('home'))
 
 
+'''
+OAuth2 Facebook
+'''
+
+
 @app.route('/login_fb', methods=['GET', 'POST'])
 def login_fb():
-    next_url = request.args.get('next') or url_for('home')
+    # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('facebook_authorized', _external=True)
     print callback_url
     return facebook.authorize(callback=callback_url)
@@ -125,10 +130,51 @@ def facebook_authorized(resp):
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = facebook.get('/me').data
-    print user_data
     user = User.query.filter(User.email == user_data['email']).first()
+    # TODO: Security Issue, Disable Login from different SSO's with same mail to same user
     if user is None:
-        new_user = User(email=user_data['email'], username=user_data['id'], password="", sso="facebook")
+        new_user = User(email=user_data['email'], username=user_data['id'], password=" ", sso="facebook")
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+    else:
+        login_user(user)
+    return redirect(next_url)
+
+
+'''
+OAuth2 Google
+'''
+
+
+@app.route('/login_google', methods=['GET', 'POST'])
+def login_google():
+    # next_url = request.args.get('next') or url_for('home')
+    callback_url = url_for('google_authorized', _external=True)
+    print "Callback URL: " + callback_url
+    return google.authorize(callback=callback_url)
+
+
+@google.tokengetter
+def get_google_oauth_token():
+    return session.get('oauth_token')
+
+
+@app.route('/login_google/authorized')
+@google.authorized_handler
+def google_authorized(resp):
+    next_url = request.args.get('next') or url_for('home')
+    if resp is None:
+        # The user likely denied the request
+        flash(u'There was a problem logging in.')
+        return redirect(next_url)
+    # session['oauth_token'] = (resp['access_token'], '')
+    session['oauth_token'] = (resp['access_token'], '')
+    user_data = google.get('/userinfo/v2/me').data
+    user = User.query.filter(User.email == user_data['email']).first()
+    # TODO: Security Issue, Disable Login from different SSO's with same mail to same user
+    if user is None:
+        new_user = User(email=user_data['email'], username=user_data['id'], password=" ", sso="google")
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
