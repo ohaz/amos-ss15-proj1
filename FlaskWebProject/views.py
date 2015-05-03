@@ -1,6 +1,8 @@
 """
 Routes and views for the flask application.
 """
+import hashlib
+import uuid
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
 from FlaskWebProject import app, db, lm
@@ -8,7 +10,7 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
-from .models import User, bcrypt
+from .models import User
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -51,14 +53,16 @@ def login():
     if request.method == 'POST':
         if form.validate_on_submit():
             user = User.query.filter_by(username=request.form['username']).first()
-            if user is not None and bcrypt.check_password_hash(
-                    user.password, request.form['password']
-            ):
-                session['remember_me'] = form.remember_me.data
-                login_user(user)
-                return redirect(request.args.get('next') or url_for('home'))
+            if user is not None:
+                password, salt = user.password.split(':')
+                if password == hashlib.sha256(salt.encode() + request.form['password'].encode()).hexdigest():
+                    session['remember_me'] = form.remember_me.data
+                    login_user(user)
+                    return redirect(request.args.get('next') or url_for('home'))
+                else:
+                    error='Invalid passowrd'
             else:
-                error = 'Invalid username or password.'
+                error = 'Invalid username'
     return render_template('login.html', form=form, error=error)
 
 
@@ -68,10 +72,14 @@ def register():
         return redirect(url_for('home'))
     form = RegisterForm()
     if form.validate_on_submit():
+        # generate randomness
+        salt = uuid.uuid4().hex
+        #hashing password
+        password = hashlib.sha256(salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
         user = User(
             username=form.username.data,
             email=form.email.data,
-            password=form.password.data
+            password=password
         )
         db.session.add(user)
         db.session.commit()

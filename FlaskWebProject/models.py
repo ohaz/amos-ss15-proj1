@@ -1,5 +1,4 @@
 from FlaskWebProject import db
-from FlaskWebProject import bcrypt
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -10,7 +9,7 @@ class User(db.Model):
     def __init__(self, username, email, password):
         self.username = username
         self.email = email
-        self.password = bcrypt.generate_password_hash(password)
+        self.password = password
 
     def is_authenticated(self):
         return True
