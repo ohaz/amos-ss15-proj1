@@ -4,10 +4,10 @@
 define({
 	// The port on which the instrumenting proxy will listen
 	proxyPort: 9000,
-
+	
 	// A fully qualified URL to the Intern proxy
 	proxyUrl: 'http://localhost:9000/',
-
+	
 	// Default desired capabilities for all environments. Individual capabilities can be overridden by any of the
 	// specified browser environments in the `environments` array below as well. See
 	// https://code.google.com/p/selenium/wiki/DesiredCapabilities for standard Selenium capabilities and
@@ -64,8 +64,8 @@ define({
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [
-		//'tests/functional/index-web',
-		//'tests/functional/index-web_rev',
+		'tests/functional/index-web',
+		'tests/functional/index-web_rev',
 		'tests/functional/index-web-comparison'
 	],
 
