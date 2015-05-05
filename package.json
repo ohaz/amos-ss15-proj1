@@ -1,0 +1,23 @@
+{
+  "name": "datev",
+  "version": "2.0.0",
+  "description": "Intern tutorial. Learn how to use Intern by following this tutorial!",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ohaz/amos-ss15-proj1"
+  },
+  "licenses": [
+    {
+      "type": "BSD-3-Clause",
+      "url": "https://github.com/theintern/intern/blob/geezer/LICENSE"
+    }
+  ],
+  "bugs": "https://github.com/ohaz/amos-ss15-proj1/issues",
+  "homepage": "http://theintern.io/",
+  "devDependencies": {
+    "intern": "^2.2.2"
+  },
+  "scripts": {
+    "test": "intern-runner config=tests/intern"
+  }
+}

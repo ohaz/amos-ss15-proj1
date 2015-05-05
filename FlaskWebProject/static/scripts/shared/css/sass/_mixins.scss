@@ -1,0 +1,119 @@
+@mixin type-area($correction: 0) {
+  display: block;
+  margin: 0 (8px + $correction) 1em;
+  overflow: hidden;
+
+  @media only screen and (min-width: 680px) {
+    & {
+      margin-left: (50px + $correction);
+      margin-right: (50px + $correction);
+    }
+  }
+}
+
+@mixin control {
+  height: $l-control-height;
+  color: $c-grey-dark-1;
+  background-color: #fff;
+  display: inline-block;
+  text-decoration: none;
+  @include rounded-corners($l-control-border-radius);
+  @include box-sizing(border-box);
+}
+
+@mixin vertical-gradient($from, $to, $fallback: transparent) {
+  background-color: $fallback;
+  background-image: -webkit-gradient(linear, left top, left bottom, from($from), to($to));
+  background-image: -webkit-linear-gradient(top, $from, $to);
+  background-image:    -moz-linear-gradient(top, $from, $to);
+  background-image:     -ms-linear-gradient(top, $from, $to);
+  background-image:      -o-linear-gradient(top, $from, $to);
+  background-image:         linear-gradient(top, $from, $to);
+}
+
+@mixin rounded-corners($r) {
+  -webkit-border-radius: $r;
+     -moz-border-radius: $r;
+          border-radius: $r;
+}
+
+@mixin rounded-corners-top($r) {
+  -webkit-border-top-left-radius: $r;
+  -webkit-border-top-right-radius: $r;
+     -moz-border-radius-topleft: $r;
+     -moz-border-radius-topright: $r;
+          border-top-left-radius: $r;
+          border-top-right-radius: $r;
+}
+
+@mixin rounded-corners-bottom($r) {
+  -webkit-border-bottom-left-radius: $r;
+  -webkit-border-bottom-right-radius: $r;
+     -moz-border-radius-bottomleft: $r;
+     -moz-border-radius-bottomright: $r;
+          border-bottom-left-radius: $r;
+          border-bottom-right-radius: $r;
+}
+
+@mixin rounded-corners-left($r) {
+  -webkit-border-top-left-radius: $r;
+  -webkit-border-bottom-left-radius: $r;
+     -moz-border-radius-topleft: $r;
+     -moz-border-radius-bottomleft: $r;
+          border-top-left-radius: $r;
+          border-bottom-left-radius: $r;
+}
+
+@mixin rounded-corners-right($r) {
+  -webkit-border-top-right-radius: $r;
+  -webkit-border-bottom-right-radius: $r;
+     -moz-border-radius-topright: $r;
+     -moz-border-radius-bottomright: $r;
+          border-top-right-radius: $r;
+          border-bottom-right-radius: $r;
+}
+
+@mixin box-sizing($type) {
+    -webkit-box-sizing: $type;
+       -moz-box-sizing: $type;
+        -ms-box-sizing: $type;
+            box-sizing: $type;
+}
+
+@mixin box-shadow($x, $y, $blur, $spread, $color) {
+  -webkit-box-shadow: $x $y $blur $spread $color;
+     -moz-box-shadow: $x $y $blur $spread $color;
+       -o-box-shadow: $x $y $blur $spread $color;
+          box-shadow: $x $y $blur $spread $color;
+}
+
+@mixin inset-box-shadow($x, $y, $blur, $spread, $color) {
+  -webkit-box-shadow: inset $x $y $blur $spread $color;
+     -moz-box-shadow: inset $x $y $blur $spread $color;
+       -o-box-shadow: inset $x $y $blur $spread $color;
+          box-shadow: inset $x $y $blur $spread $color;
+}
+
+@mixin double-inset-box-shadow($x1, $y1, $blur1, $spread1, $color1, $x2, $y2, $blur2, $spread2, $color2) {
+  -webkit-box-shadow: inset $x1 $y1 $blur1 $spread1 $color1, inset $x2 $y2 $blur2 $spread2 $color2;
+     -moz-box-shadow: inset $x1 $y1 $blur1 $spread1 $color1, inset $x2 $y2 $blur2 $spread2 $color2;
+       -o-box-shadow: inset $x1 $y1 $blur1 $spread1 $color1, inset $x2 $y2 $blur2 $spread2 $color2;
+          box-shadow: inset $x1 $y1 $blur1 $spread1 $color1, inset $x2 $y2 $blur2 $spread2 $color2;
+}
+
+@mixin no-box-shadow {
+  -webkit-box-shadow: none;
+     -moz-box-shadow: none;
+       -o-box-shadow: none;
+          box-shadow: none;
+}
+
+
+@mixin sprite-size {
+  background-size:490px 30px;
+}
+
+@mixin sprite-retina-symbols {
+  background-image: url(images/DATEV-symbols@2x.png);
+}
+
