@@ -1,0 +1,115 @@
+.text-input,
+.number-input {
+  display: inline-block;
+  padding: 3px 7px;
+  width: 100%;
+  min-height: $l-control-height - 4px;
+  line-height: $l-control-height - 4px;
+  -webkit-appearance: none;
+  background-color: $c-input-bg-color;
+  border-width: 1px;
+  border-color: $c-input-border-color;
+  border-style: solid;
+  @include rounded-corners($l-control-border-radius);
+  @include box-sizing(border-box);
+}
+
+.number-input-ios {
+  position: relative;
+  display: block;
+  padding-top: 0;
+  padding-bottom: 0;
+
+  input {
+    opacity: 0;
+    padding: 0;
+
+    position: absolute;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 7px;
+
+    border: 0;
+    text-align: right;
+  }
+}
+
+.input-border {
+  border: 1px solid $c-input-border-color;
+  background-color: $c-input-bg-color;
+  @include rounded-corners($l-control-border-radius);
+}
+
+.input-spacing {
+  padding: 3px 7px;
+  min-height: $l-control-height;
+  line-height: $l-control-height;
+}
+
+.nav-list,
+.input-spacing {
+  .supplemental {
+    float: right;
+    overflow: hidden;
+    max-width: 50%;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: $c-grey-dark-1;
+
+    select {
+      display: inline-block;
+      color: $c-grey-dark-1;
+    }
+
+    input[type=text],
+    input[type=number],
+    input[type=date],
+    .text-input,
+    .number-input {
+      width: 85px;
+      padding: 0;
+      border: 0;
+      text-align: right;
+      color: inherit;
+      -webkit-appearance: none;
+    }
+
+    .number-input-ios input {
+      right: 0;
+      width: auto;
+    }
+
+    .text-input.input-s,
+    .number-input.input-s {
+      width: 50px;
+    }
+
+    .text-input.input-digits-8,
+    .number-input.input-digits-8 {
+      width: 86px;
+    }
+
+    .text-input.input-digits-9,
+    .number-input.input-digits-9 {
+      width: 96px;
+    }
+
+    .text-input.input-digits-10,
+    .number-input.input-digits-10 {
+      width: 106px;
+    }
+
+    .text-input.input-digits-11,
+    .number-input.input-digits-11 {
+      width: 122px;
+    }
+  }
+
+  .item-wrapper {
+    position: relative;
+    display: block;
+    padding: 0 8px;
+  }
+}

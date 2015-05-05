@@ -1,0 +1,99 @@
+Paragraph;Tätigkeit;Tabelle;minZ;minN;maxZ;maxN;Bemerkung
+8;Vorschuss (netto);Pauschal;;;;;Bitte Betrag mit negativen Vorzeichen eingeben
+13;Zeitgebühr;Zeit;30.00;30;70.00;30;
+14;Pauschalvergütung;Pauschal;;;;;gemäß schriftlicher Vereinbarung
+21 Abs. 1 S. 1;Rat / Auskunft;A;1;10;10;10;
+21 Abs. 1 S. 2;Rat / Auskunft Erstberatung eines Verbrauchers ;A;1;10;10;10;maximale Gebühr von 190,-
+21 Abs. 2;Prüfung Berufung/Revision mit abschlägigem Ergebnis;E;13;20;13;20;
+22;Schriftliches Gutachten;A;10;10;30;10;
+23 S. 1 Nr. 1;Berichtigung einer Erklärung;A;2;10;10;10;
+23 S. 1 Nr. 2;Antrag auf Stundung;A;2;10;8;10;
+23 S. 1 Nr. 3;Antrag auf Anpassung der Vorauszahlungen;A;2;10;8;10;
+23 S. 1 Nr. 4;Antrag auf abweichende Steuerfestsetzung aus Billigkeitsgründen;A;2;10;8;10;
+23 S. 1 Nr. 5;Antrag auf Erlaß von Ansprüchen aus dem Steuerschuldverhältnis;A;2;10;8;10;
+23 S. 1 Nr. 6;Antrag auf Erstattung § 37 Abs. 2 AO;A;2;10;8;10;
+23 S. 1 Nr. 7;Antrag auf Aufhebung oder Änderung eines Steuerbescheides;A;2;10;10;10;
+23 S. 1 Nr. 8;Antrag auf Rücknahme/Widerruf eines Verwaltungsaktes;A;4;10;10;10;
+23 S. 1 Nr. 9;Antrag auf Wiedereinsetzung in den vorigen Stand;A;4;10;10;10;
+23 S. 1 Nr. 10;Sonstige Anträge außerhalb von Steuererklärungen;A;2;10;10;10;
+24 Abs. 1 Nr. 1;Einkommensteuererklärung ohne Ermittlung der einzelnen Einkünfte;A;1;10;6;10;Summe der positiven Einkünfte, min. 8.000,-
+24 Abs. 1 Nr. 2;Erklärung zur gesonderten Feststellung der Einkünfte;A;1;10;5;10;Summe der positiven Einkünfte, min. 8.000,-
+24 Abs. 1 Nr. 3;Körperschaftsteuererklärung;A;2;10;8;10;Einkommen vor Verlustabzug, min. 16.000,-
+24 Abs. 1 Nr. 5;Erklärung zur Gewerbesteuer;A;1;10;6;10;Gewerbeertrag vor Freibetrag & Verlustabzug, min. 8.000,-
+24 Abs. 1 Nr. 6;Erklärung zur Gewerbesteuerzerlegung;A;1;10;6;10;10% der Arbeitslöhne, min. 4.000,-
+24 Abs. 1 Nr. 7;Umsatzsteuer-Voranmeldung sowie ergänzende Anträge und Meldungen;A;1;10;6;10;10% Entgelte + §13b UStG, min. 650,-
+24 Abs. 1 Nr. 8;Umsatzsteuererklärung für das Kalenderjahr;A;1;10;8;10;10% Entgelte + §13b UStG, min. 8.000,-
+24 Abs. 1 Nr. 10;Vermögenssteuererklärung;A;1;20;18;20;Rohvermögen
+24 Abs. 1 Nr. 11;Erklärung zur Feststellung nach BewG oder ErbStG;A;1;20;18;20;erklärter Wert, min. 25.000,-
+24 Abs. 1 Nr. 12;Erbschaftsteuererklärung ohne Ermittlung der Zugewinnausgleichsforderung;A;2;10;10;10;Wert des Erwerbs vor Schuldenabzug, min. 16.000,-
+24 Abs. 1 Nr. 13;Schenkungsteuererklärung;A;2;10;10;10;Rohwert der Schenkung, min. 16.000,-
+24 Abs. 1 Nr. 14;Kapitalertragsteueranmeldung und zusammenhängende Erklärungen;A;1;20;6;20;Summe kapitalertragsteuerpfl. Kapitalerträge, min. 4.000,-
+24 Abs. 1 Nr. 15;Lohnsteueranmeldung;A;1;20;6;20;20% der Arbeitslöhne, min. 1.000,-
+24 Abs. 1 Nr. 16;Steuererklärungen auf dem Gebiet der Einfuhr- und Ausfuhrabgaben;A;1;10;3;10;höchster in Betracht kommender Abgabensatz, min. 1.000,-
+24 Abs. 1 Nr. 17;Anmeldungen/Erkl. Verbrauchsteuern (keine Eingangsabgaben);A;1;10;3;10;der angemeldete bzw. festgesetzte Betrag, min. 1.000,-
+24 Abs. 1 Nr. 18;Antrag auf Gewährung einer Vebrauchsteuervergütung;A;1;10;3;10;beantragte Vergütung, min. 1.000,-
+24 Abs. 1 Nr. 19;Antrag auf Gewährung einer Investitionszulage;A;1;10;6;10;Bemessungsgrundlage der Investitionszulage
+24 Abs. 1 Nr. 20;Antrag auf Steuervergütung nach § 4a UStG;A;1;10;6;10;beantragte Vergütung
+24 Abs. 1 Nr. 21;Antrag auf Vergütung der Vorsteuerbeträge;A;1;10;6;10;beantragte Vergütung, min. 1.300,-
+24 Abs. 1 Nr. 22;Antrag auf Erstattung von Kapitalertragsteuer;A;1;10;6;10;beantragte Erstattung, min. 1.000,-
+24 Abs. 1 Nr. 23;Antrag nach Abschnitt X des EStG;A;2;10;10;10;beantragtes Jahreskindergeld
+24 Abs. 1 Nr. 25;Anmeldung über den Steuerabzug von Bauleistungen;A;1;10;6;10;angemeldeter Steuerabzug, min. 1.000,-
+24 Abs. 1 Nr. 26;Erstellung sonstiger Steuererklärungen;A;1;10;6;10;Bemessungsgrundlage, min. 8.000,-
+24 Abs. 2;Ermittlung Zugewinnausgleichsforderung gem. § 5 Erbschaftsteuergesetz;A;5;10;15;10;ermittelter Betrag, min. 12.500,-
+24 Abs. 3;Lohnsteuer-Ermäßigung: Antrag auf Eintragung von Freibeträgen;A;1;20;4;20;voraussichtlicher Jahresarbeitslohn, min. 4.500,-
+24 Abs. 4 Nr. 2;Arbeiten zur Feststellung des verrechenbaren Verlustes gem. §15a EStG;Zeit;30.00;30;70.00;30;
+24 Abs. 4 Nr. 3;Meldung über die Beteiligung an ausländischen Körperschaften;Zeit;30.00;30;70.00;30;
+24 Abs. 4 Nr. 5;sonstige Anträge und Meldungen nach dem EStG;Zeit;30.00;30;70.00;30;
+24 Abs. 4 Nr. 11;Überwachung und Meldung der Größen nach § 13a ErbStG;Zeit;30.00;30;70.00;30;
+24 Abs. 4 Nr. 12;Berechnung des Begünstigungsgewinns i.S. § 34a EStG ;Zeit;30.00;30;70.00;30;
+25 Abs. 1;Überschussermittlung der Betriebseinnahmen über die Betriebsausgaben;B;5;10;20;10;Summe Betriebseinnahmen (sofern höher: Betriebsausgaben), min. 12.500,-
+25 Abs. 2;Vorarbeiten über das übliche Maß;Zeit;30.00;30;70.00;30;
+25 Abs. 4;Erläuterungsbericht zur Überschussermittlung;B;2;10;12;10;Summe Betriebseinnahmen (sofern höher: Betriebsausgaben)
+26;Ermittlung des Gewinns LuF nach Durchschnittssätzen;B;5;10;20;10;Durchschnittsgewinn nach § 13a(3)S.1 EStG
+27 Abs. 1;Überschussermittlung der Einnahmen über die Werbungskosten;A;1;20;12;20;höherer Wert aus Summe Einnahmen/WeKo, min. 8.000,-
+27 Abs. 3;Vorarbeiten über das übliche Maß;Zeit;30.00;30;70.00;30;
+28;Prüfung Steuerbescheide;Zeit;30.00;30;70.00;30;
+29 Nr. 1;Teilnahme an Prüfungen;Zeit;30.00;30;70.00;30;
+29 Nr. 2;schriftliche Einwendungen gegen den Prüfungsbericht;A;5;10;10;10;
+30;Selbstanzeige;A;10;10;30;10;Summe berichtigter/neuer Angaben, min. 8.000,-
+31;Besprechungen;A;5;10;10;10;
+32;Einrichtung einer Buchführung i.S.d. §§ 33 und 34;Zeit;30.00;30;70.00;30;
+33 Abs. 1;Buchführung/Führen steuerlicher Aufzeichnungen einschl. des Kontierens der Belege;C;2;10;12;10;Jahresumsatz (sofern höher: Summe Aufwand)
+33 Abs. 2;Kontierung der Belege ;C;1;10;6;10;Jahresumsatz (sofern höher: Summe Aufwand)
+33 Abs. 3;Buchführung/Führen steuerlicher Aufzeichnungen nach vom Auftraggeber kontierten Belegen;C;1;10;6;10;Jahresumsatz (sofern höher: Summe Aufwand)
+33 Abs. 4;Buchführung/Führen steuerlicher Aufzeichnungen nach vom Auftraggeber erstellten Eingaben für die Datenverarbeitung;C;1;20;10;20;Jahresumsatz (sofern höher: Summe Aufwand)
+33 Abs. 5;lfd. Überwachung von  Buchführung/steuerlichen Aufzeichnungen des Auftraggebers ;C;1;10;6;10;Jahresumsatz (sofern höher: Summe Aufwand)
+33 Abs. 7;Hilfeleistung bei sonstigen Tätigkeiten der Buchführung/dem Führen steuerlicher Aufzeichnungen;Zeit;30.00;30;70.00;30;
+34 Abs. 1;Erstmalige Einrichtung von Lohnkonten;AN;5.00;;16.00;;Gebühr je Arbeitnehmer
+34 Abs. 2;Führung von Lohnkonten und Lohnabrechnungen;AN;5.00;;25.00;;Gebühr je Arbeitnehmer
+34 Abs. 3;Führung von Lohnkonten und Lohnabrechnungen (vom Auftraggeber erstellt);AN;2.00;;9.00;;Gebühr je Arbeitnehmer
+34 Abs. 4;Führung Lohnkonten/Lohnabrechnung (Eingaben für die Datenverwaltung vom Auftraggeber);AN;1.00;;4.00;;Gebühr je Arbeitnehmer
+34 Abs. 5;Hilfeleistung bei sonstigen Tätigkeiten der Lohnbuchführung;Zeit;30.00;30;70.00;30;
+35 Abs. 1 Nr. 1 a;Aufstellung Jahresabschluss (Bilanz, GuV);B;10;10;40;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 1 b;Erstellung Anhang;B;2;10;12;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 2;Erstellung Zwischenabschluss bzw. vorläufiger Abschluss;B;10;10;40;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 3 a;Ableitung des steuerlichen Ergebnisses aus dem Handelsbilanzergebnis;B;2;10;10;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 3 b;Entwicklung der Steuerbilanz aus dem Handelsbilanzergebnis;B;5;10;12;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 4;Aufstellung Eröffnungsbilanz;B;5;10;12;10;berichtigte Bilanzsumme
+35 Abs. 1 Nr. 5;Aufstellung Auseinandersetzungsbilanz;B;5;10;20;10;berichtigte Bilanzsumme
+35 Abs. 1 Nr. 6;schriftlicher Erläuterungsbericht;B;2;10;12;10;Gegenstandswert der zugrunde liegenden Abschlußarbeit
+35 Abs. 1 Nr. 7 a;beratende Mitwirkung bei der Aufstellung eines Jahresabschlusses;B;2;10;10;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 7 b;beratende Mitwirkung bei der Aufstellung eines Anhangs;B;2;10;4;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+35 Abs. 1 Nr. 7 c;beratende Mitwirkung bei der Erstellung eines Lageberichts;B;2;10;4;10;Mittel zwischen berichtigter Bilanzsumme und Jahresleistung
+36 Abs. 1;Prüfung einer Buchführung, Konten, Überschussrechnung, Jahresabschlussposten;Zeit;30.00;30;70.00;30;
+36 Abs. 2 Nr. 1;Prüfung Bilanz, GuV, Anhang, Lagebericht;B;2;10;10;10;Ermittlung nach § 35 Abs. 2
+36 Abs. 2 Nr. 2;Berichterstattung über Prüfung;Zeit;30.00;30;70.00;30;
+37 S.1 Nr. 1;Erstellung Vermögens- oder Finanzstatus;B;5;10;15;10;Summe Vermögenswerte bzw. Finanzwerte
+37 S.1 Nr. 2;Erstellung Vermögens- oder Finanzstatus aus übergebenen Endzahlen;B;2;10;6;10;Summe Vermögenswerte bzw. Finanzwerte
+37 S.1 Nr. 3;schriftlicher Erläuterungsbericht;B;1;10;6;10;Summe Vermögenswerte bzw. Finanzwerte
+38 Abs. 1;Bescheinigung über Beachtung steuerlicher Vorschriften;B;1;10;6;10;
+38 Abs. 2;Mitwirkung an der Erteilung von Bescheinigungen;Zeit;30.00;30;70.00;30;
+39 Abs. 4 Nr. 1;Hilfeleistung bei der Einrichtung einer Buchführung;D-a;1;10;6;10;
+39 Abs. 4 Nr. 2;Erfassung der Anfangswerte bei Buchführungsgewinn;D-a;3;10;15;10;
+40 Abs. 1 S. 1;Geschäftsgebühr;E;5;10;25;10;einfache Schreiben: 03/10, nur bei schwierigen > 13/10
+40 Abs. 2;Geschäftsgebühr bei vorangegangenen Gebühren nach § 28 ;E;3;10;20;10;
+40 Abs. 3;Geschäftsgebühr bei vorangegangenen Gebühren nach § 24 ;E;1;10;7.5;10;
+40 Abs. 4;Geschäftsgebühr bei vorangegangenen Gebühren nach § 23 ;E;0;10;25;10;Summe der Gebühr §23 und nicht > 25/10
+40 Abs. 6;Geschäftsgebühr bei vorangegangenen Gebühren nach § 31 ;E;0;10;25;10;Summe der Gebühr §31 und nicht > 25/10
+40 Abs. 8;Erledigung wegen Rücknahme (...) des angefochtenen Verwaltungsakts ;E;10;10;10;10;
+-;Nachlass (netto);Pauschal;;;;;Bitte Betrag mit negativen Vorzeichen eingeben
