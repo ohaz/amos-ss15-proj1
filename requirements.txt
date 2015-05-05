@@ -1,7 +1,0 @@
-Flask<1
-flask-login
-flask-sqlalchemy
-sqlalchemy-migrate
-flask-wtf
-flask-bcrypt
-flask_oauthlib
