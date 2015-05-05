@@ -5,7 +5,6 @@ The flask application package.
 from flask import Flask
 from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
-from flask.ext.bcrypt import Bcrypt
 from flask_oauthlib.client import OAuth
 from config import sso_fb_consumer_key
 from config import sso_fb_consumer_secret
@@ -15,7 +14,6 @@ from config import sso_google_consumer_secret
 app = Flask(__name__)
 app.config.from_object('config')
 db = SQLAlchemy(app)
-bcrypt = Bcrypt(app)
 lm = LoginManager()
 lm.init_app(app)
 lm.login_view = 'login'
