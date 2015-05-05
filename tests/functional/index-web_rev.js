@@ -9,7 +9,8 @@ define([
         // before the suite starts
         setup: function () {
             return this.remote
-                .get(require.toUrl('rechner-brutto-netto/index~web.html'))
+                //.get(require.toUrl('rechner-brutto-netto/index~web.html'))
+                .get(require.toUrl('http://uni.endless-aerospace.de/ss15/amos/rechner-brutto-netto/index~web.html'))
                 .setFindTimeout(5000).findById('shared_widgets_NumberInput_2')
                     .click()
                     .type('1360,66')
