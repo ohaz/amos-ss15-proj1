@@ -87,17 +87,20 @@ def register():
         # generate randomness
         salt = uuid.uuid4().hex
         # hashing password
-        password = hashlib.sha256(salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
-        user = User(
-            username=form.username.data,
-            email=form.email.data,
-            password=password,
-            sso="none"
-        )
-        db.session.add(user)
-        db.session.commit()
-        login_user(user)
-        return redirect(url_for('home'))
+        user = User.query.filter_by(username=request.form['username']).first()
+        email = User.query.filter_by(email=request.form['email']).first()
+        if user is None and email is None:
+            password = hashlib.sha256(salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                password=password,
+                sso="none"
+            )
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            return redirect(url_for('home'))
     return render_template('register.html', form=form)
 
 
