@@ -3,4 +3,4 @@ flask-login
 flask-sqlalchemy
 sqlalchemy-migrate
 flask-wtf
-flask_oauthlib
+flask-oauthlib
