@@ -47,12 +47,9 @@
                     <span class="input-group-addon"><i class="fa fa-lock"></i></span>
                     {{ form.password(placeholder="password", class="form-control") }}
                 </div>
-
-                {% if error %}
-                    <span class="help-block">{{ error }}</span>
-                {% endif %}
-
-
+                <span class="help-block">
+                {% if error %} {{ error }} {% endif %}
+                </span>
                 <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
             </form>
         </div>
