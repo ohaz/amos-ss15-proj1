@@ -3,39 +3,71 @@
 <head>
     <title>Flask Intro - login page</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}">
 </head>
 <body>
 <div class="container">
-    <h1>Please login</h1>
-    <br>
-    <form class="form-signin" role="form" method="post" action="">
-        {{ form.csrf_token }}
-        <p>
-            {{ form.username(placeholder="username") }}
-    <span class="error">
-      {% if form.username.errors %}
-        {% for error in form.username.errors %}
-          {{ error }}
-        {% endfor %}
-      {% endif %}
-    </span>
-        </p>
-        <p>
-            {{ form.password(placeholder="password") }}
-    <span class="error">
-      {% if form.password.errors %}
-        {% for error in form.password.errors %}
-          {{ error }}
-        {% endfor %}
-      {% endif %}
-    </span>
-        </p>
-        <button class="btn btn-sm btn-success" type="submit">Sign in</button>
-        <p>{{ form.remember_me }} Remember Me</p>
-        <a href="{{ url_for('login_fb') }}">Sign in with FB</a>
-        <a href="{{ url_for('login_google') }}">Sign in with Google</a>
-        <a href="{{ url_for('register') }}">Register</a>
-    </form>
+    <div class="omb_login">
+    <h3 class="omb_authTitle">Login or <a href="{{ url_for('register') }}">Sign up</a></h3>
+    <div class="row omb_row-sm-offset-3 omb_socialButtons">
+        <div class="col-xs-6 col-sm-3">
+            <a href="{{ url_for('login_fb') }}" class="btn btn-lg btn-block omb_btn-facebook">
+                <i class="fa fa-facebook visible-xs"></i>
+                <span class="hidden-xs">Facebook</span>
+            </a>
+        </div>
+        <div class="col-xs-6 col-sm-3">
+            <a href="{{ url_for('login_google') }}" class="btn btn-lg btn-block omb_btn-google">
+                <i class="fa fa-google-plus visible-xs"></i>
+                <span class="hidden-xs">Google+</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="row omb_row-sm-offset-3 omb_loginOr">
+        <div class="col-xs-12 col-sm-6">
+            <hr class="omb_hrOr">
+            <span class="omb_spanOr">or</span>
+        </div>
+    </div>
+
+    <div class="row omb_row-sm-offset-3">
+        <div class="col-xs-12 col-sm-6">
+            <form class="omb_loginForm" action="" autocomplete="off" method="POST">
+                {{ form.csrf_token }}
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-user"></i></span>
+                    {{ form.username(placeholder="username", class="form-control") }}
+                </div>
+                <span class="help-block"></span>
+
+                <div class="input-group">
+                    <span class="input-group-addon"><i class="fa fa-lock"></i></span>
+                    {{ form.password(placeholder="password", class="form-control") }}
+                </div>
+                <span class="help-block">
+                {% if error %} {{ error }} {% endif %}
+                </span>
+                <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
+            </form>
+        </div>
+        </div>
+        <div class="row omb_row-sm-offset-3">
+            <div class="col-xs-12 col-sm-3">
+                <label class="checkbox">
+                    {{ form.remember_me }} Remember Me
+                </label>
+            </div>
+            <div class="col-xs-12 col-sm-3">
+                <p class="omb_forgotPwd">
+                    <a href="#">Forgot password?</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
 </div>
 </body>
 </html>
