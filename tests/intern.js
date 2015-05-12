@@ -64,6 +64,7 @@ define({
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [
+		'tests/functional/connect-to-google',
 		'tests/functional/login',
 		'tests/functional/index-web',
 		'tests/functional/index-web_rev',
