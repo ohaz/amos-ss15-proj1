@@ -9,8 +9,6 @@ define([
         // before the suite starts
         setup: function () {
             return this.remote
-                .get(require.toUrl('http://amos-proj1.elasticbeanstalk.com/'))
-                //.get(require.toUrl('amos-proj1-flask.azurewebsites.net'))
                 .setFindTimeout(5000)
                 // login
                 .findById('username')
@@ -33,6 +31,5 @@ define([
                         'Page Header should be "Netto-Lohn" after Login.');
                 });
         }
-
     });
 });

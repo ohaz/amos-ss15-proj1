@@ -9,8 +9,6 @@ define([
         // before the suite starts
         setup: function () {
             return this.remote
-                .get(require.toUrl('http://amos-proj1.elasticbeanstalk.com/'))
-                //.get(require.toUrl('amos-proj1-flask.azurewebsites.net'))
                 .setFindTimeout(5000)
                 .findById('shared_widgets_NumberInput_0')
                     .click()
