@@ -7,12 +7,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='scripts/shared/css/datev-mobile.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
 
     <script src="{{ url_for('static', filename='scripts/shared/config.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/dojotoolkit/dojo/dojo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/rechner-brutto-netto/index-web.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='scripts/jquery-2.1.4.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='scripts/index.js') }}" defer></script>
   </head>
   <body class="bg-detail has-top-nav-bar">
 
+    <!-- calculator will be inserted here -->
+
+    <footer class="footer">
+      <button class="button" id="saveresult">Save result</button>
+      <button class="button" id="loadresult">Load result</button>
+    </footer>
   </body>
+
 </html>
