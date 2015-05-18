@@ -34,7 +34,10 @@ def download_branch(url):
                 f.write(buffer)
                 status = r" > > %10d  [%3.2f%%]" % (file_size_dl, file_size_dl * 100. / file_size)
                 status = status + chr(8)*(len(status)+1)
-                print (status)
+                #print(status) #atop spamming commandline
+                import sys
+                sys.stdout.write('\r' + str(status))
+                sys.stdout.flush()
 
             f.close()
             download_finished = True
