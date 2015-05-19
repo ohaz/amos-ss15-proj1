@@ -41,6 +41,10 @@ def before_request():
     g.user = current_user
 
 
+@app.route('/create_bucket')
+def create_bucket():
+    return storageinterface.create_container('test1')
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -54,8 +58,6 @@ def home():
 '''
 UserName Password Login
 '''
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if g.user is not None and g.user.is_authenticated():
