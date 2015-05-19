@@ -54,7 +54,8 @@ def download_branch(url):
         print('Unzipping did not work. Probably your internet died while you were downloading the file.')
 
     foldername = file_name.split('.')[0]
-    os.rename(os.path.join(GLOBAL_DIR, "amos-ss15-proj1-"+foldername), os.path.join(GLOBAL_DIR, "amos-ss15-proj1-develop"))
+    import shutil
+    shutil.move(os.path.join(GLOBAL_DIR, "amos-ss15-proj1-"+foldername), os.path.join(GLOBAL_DIR, "amos-ss15-proj1-develop"))
 
 
     return file_name
