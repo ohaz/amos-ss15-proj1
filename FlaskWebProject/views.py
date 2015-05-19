@@ -39,15 +39,6 @@ def load_user(id):
 def before_request():
     g.user = current_user
 
-# Routes
-@app.route('/test_google_storage')
-def test_google_storage():
-    from googlestorage import test_google_storage_handler, test_google_storage_interface
-    value = ""
-    #value += test_google_storage_handler()
-    value += "<br/<br/><br/>" + test_google_storage_interface()
-    return value
-
 @app.route('/')
 @app.route('/index')
 @login_required
