@@ -5,3 +5,16 @@ sqlalchemy-migrate
 flask-wtf
 flask-oauthlib
 pymysql
+
+#for google[Storage]
+#Global
+google-api-python-client
+httplib2
+
+#Local
+#pycrypto
+
+
+# installed packages needed: <libffi-dev, libssl-dev>
+#PyOpenSSL
+#argparse
