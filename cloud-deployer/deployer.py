@@ -38,7 +38,6 @@ def download_branch(url):
                 import sys
                 sys.stdout.write('\r' + str(status))
                 sys.stdout.flush()
-
             f.close()
             download_finished = True
         except IndexError as e:
@@ -54,12 +53,22 @@ def download_branch(url):
     except:
         print('Unzipping did not work. Probably your internet died while you were downloading the file.')
 
+    foldername = file_name.split('.')[0]
+    os.rename(os.path.join(GLOBAL_DIR, "amos-ss15-proj1-"+foldername), os.path.join(GLOBAL_DIR, "amos-ss15-proj1-develop"))
+
+
     return file_name
 
 print(' -- Cloud deployment script')
 
-print(' > Downloading development branch:')
-download_branch('https://github.com/ohaz/amos-ss15-proj1/archive/develop.zip')
+finished = False
+while not finished:
+    print('> Which branch should I deploy?')
+    branch = raw_input(' > > Name of branch (Example: develop): ')
+    finished = True
+    print(' > Downloading '+branch+' branch:')
+    download_branch('https://github.com/ohaz/amos-ss15-proj1/archive/'+branch+'.zip')
+
 
 print(' > Checking deployment sub-scripts')
 try:
