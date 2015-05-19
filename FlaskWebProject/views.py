@@ -11,6 +11,7 @@ from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
 from .models import User
+import storageinterface
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -39,7 +40,13 @@ def load_user(id):
 def before_request():
     g.user = current_user
 
+
 # Routes
+@app.route('/create_bucket')
+def test_google_storage():
+    value = storageinterface.create_container("testid")
+    return value
+
 @app.route('/test_google_storage')
 def test_google_storage():
     from googlestorage import test_google_storage_handler, test_google_storage_interface
