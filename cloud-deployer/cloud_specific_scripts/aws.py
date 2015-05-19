@@ -6,6 +6,7 @@ import shutil
 import subprocess
 from distutils import file_util, dir_util
 from util import copy_repo_to_specific, add_to_requirements
+from cloud_specific_files.aws import config
 
 OWN_FOLDER = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'aws')
 #OWN_PATH = os.path.dirname(os.path.realpath(__file__))
@@ -41,7 +42,8 @@ def run_subprocess(cmd):
 
 
 def deploy_app_to_aws():
-    commandString = '. '+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+' '+OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo') 
+    commandString = '. '+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+' '+OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')+' '+config.AWS_EB_ACCESS_KEY+' '+config.AWS_EB_SECRET_KEY
+    #commandString = '. '+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+' '+OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')
     subprocess.call(commandString, shell=True)
 
 def copy_config_to_repo():
