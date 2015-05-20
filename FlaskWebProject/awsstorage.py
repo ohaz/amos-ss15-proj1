@@ -111,12 +111,14 @@ def delete_file(bucket, filename):
     bucket_content.delete_key(k)
 
 def delete_container(bucket):
+    print "Deleting bucket in process..."
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    print "This bucket will be deleted: " + bucketname
     bucket_content = s3_conn.get_bucket(bucketname)
-
+    print "getting bucket content..."
     #delete all files in bucket before delete bucket
-    for key in full_bucket.list():
+    for key in bucket_content.list():
         key.delete()
-
-    conn.delete_bucket(bucketname)
+    print "all keys successfully deleted..."
+    s3_conn.delete_bucket(bucketname)
     print "deleting bucket successfully"
