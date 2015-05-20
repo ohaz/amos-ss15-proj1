@@ -67,8 +67,8 @@ print(' -- Cloud deployment script')
     #print('> Which branch should I deploy?')
     #branch = raw_input(' > > Name of branch (Example: develop): ')
     #finished = True
-#print(' > Downloading develop branch:')
-#download_branch('https://github.com/ohaz/amos-ss15-proj1/archive/develop.zip')
+print(' > Downloading develop branch:')
+download_branch('https://github.com/ohaz/amos-ss15-proj1/archive/develop.zip')
 
 
 print(' > Checking deployment sub-scripts')
