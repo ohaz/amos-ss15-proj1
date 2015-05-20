@@ -51,3 +51,5 @@ app.db
 
 # secrets
 brutto-netto-rechner.pem
+/node_modules/
+.idea/
