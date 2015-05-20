@@ -12,7 +12,7 @@ elif cloudplatform == "aws":
     import awsstorage
     storage_adapter = awsstorage
 elif cloudplatform == "azure":
-    import azurestorage
+    from FlaskWebProject import azurestorage
     storage_adapter = azurestorage
 
 #def get_storage_adapter():
