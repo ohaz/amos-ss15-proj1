@@ -1,0 +1,7 @@
+cloud_specific_files/*/config*
+cloud_specific_scripts/azure_config.py
+cloud_specific_scripts/aws_config.py
+cloud_specific_scripts/google_config.py
+
+*.pyc
+.idea/

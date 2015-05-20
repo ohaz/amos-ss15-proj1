@@ -11,6 +11,7 @@ from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
 from .models import User
+import storageinterface
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +41,21 @@ def before_request():
     g.user = current_user
 
 
-# Routes
+@app.route('/create_bucket')
+def create_bucket():
+    storageinterface.create_container('test1')
+    return redirect(url_for('home'))
+
+@app.route('/upload_from_text')
+def upload_from_text():
+    storageinterface.upload_from_text('test1', 'filename.txt', 'content')
+    return redirect(url_for('home'))
+
+@app.route('/delete_bucket')
+def delete_bucket():
+    storageinterface.delete_container('test1')
+    return redirect(url_for('home'))
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -54,8 +69,6 @@ def home():
 '''
 UserName Password Login
 '''
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if g.user is not None and g.user.is_authenticated():
