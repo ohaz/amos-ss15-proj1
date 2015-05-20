@@ -119,3 +119,4 @@ def delete_container(bucket):
         key.delete()
 
     conn.delete_bucket(bucketname)
+    print "deleting bucket successfully"
