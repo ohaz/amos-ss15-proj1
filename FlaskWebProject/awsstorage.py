@@ -12,7 +12,8 @@ s3_conn = S3Connection(AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET)
 # Create a new container for files
 #
 def create_container(userID):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + userID
+    #bucketname = AWS_S3_ACCESS_KEY + "_" + userID
+    bucketname = userID
     bucketname = bucketname.lower()
     bucket = s3_conn.create_bucket(bucketname)
     print "bucket successfully created..."
