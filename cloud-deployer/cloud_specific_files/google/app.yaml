@@ -1,5 +1,5 @@
 # Google Cloud Config file
-application: hello-world-test-web-application
+application: brutto-netto-rechner
 version: 1
 
 runtime: python27
@@ -17,5 +17,3 @@ libraries:
   version: "2.6"
 - name: markupsafe
   version: "0.15"
-- name: pycrypto
-  version: "latest"

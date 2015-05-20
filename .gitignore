@@ -48,3 +48,8 @@ config.amazon.py
 
 #db file
 app.db
+
+# secrets
+brutto-netto-rechner.pem
+/node_modules/
+.idea/
