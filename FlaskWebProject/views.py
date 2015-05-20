@@ -11,6 +11,7 @@ from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
 from .models import User
+from FlaskWebProject import storageinterface
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +40,22 @@ def load_user(id):
 def before_request():
     g.user = current_user
 
+
+@app.route('/create_bucket')
+def create_bucket():
+    storageinterface.create_container('test1')
+    return redirect(url_for('home'))
+
+@app.route('/upload_from_text')
+def upload_from_text():
+    storageinterface.upload_from_text('test1', 'filename.txt', 'content')
+    return redirect(url_for('home'))
+
+@app.route('/delete_bucket')
+def delete_bucket():
+    storageinterface.delete_container('test1')
+    return redirect(url_for('home'))
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -52,8 +69,6 @@ def home():
 '''
 UserName Password Login
 '''
-
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if g.user is not None and g.user.is_authenticated():
@@ -122,7 +137,6 @@ OAuth2 Facebook Login
 @app.route('/login_fb', methods=['GET', 'POST'])
 def login_fb():
     callback_url = url_for('facebook_authorized', _external=True)
-    print callback_url
     return facebook.authorize(callback=callback_url)
 
 
@@ -162,7 +176,6 @@ OAuth2 Google Login
 def login_google():
     # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('google_authorized', _external=True)
-    print "Callback URL: " + callback_url
     return google.authorize(callback=callback_url)
 
 
