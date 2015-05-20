@@ -11,7 +11,7 @@ from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
 from .models import User
-from FlaskWebProject import storageinterface
+import storageinterface
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -137,7 +137,7 @@ OAuth2 Facebook Login
 @app.route('/login_fb', methods=['GET', 'POST'])
 def login_fb():
     callback_url = url_for('facebook_authorized', _external=True)
-    #print callback_url
+    print callback_url
     return facebook.authorize(callback=callback_url)
 
 
@@ -177,7 +177,7 @@ OAuth2 Google Login
 def login_google():
     # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('google_authorized', _external=True)
-    #print "Callback URL: " + callback_url
+    print "Callback URL: " + callback_url
     return google.authorize(callback=callback_url)
 
 
