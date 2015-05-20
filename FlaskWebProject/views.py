@@ -43,7 +43,18 @@ def before_request():
 
 @app.route('/create_bucket')
 def create_bucket():
-    return storageinterface.create_container('test1')
+    storageinterface.create_container('test1')
+    return redirect(url_for('home'))
+
+@app.route('/upload_from_text')
+def upload_from_text():
+    storageinterface.upload_from_text('test1', 'filename.txt', 'content')
+    return redirect(url_for('home'))
+
+@app.route('/delete_bucket')
+def delete_bucket():
+    storageinterface.delete_container('test1')
+    return redirect(url_for('home'))
 
 @app.route('/')
 @app.route('/index')
