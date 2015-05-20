@@ -120,5 +120,5 @@ def delete_container(bucket):
     for key in bucket_content.list():
         key.delete()
 
-    conn.delete_bucket(bucketname)
+    s3_conn.delete_bucket(bucketname)
     print "deleting bucket successfully"
