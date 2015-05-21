@@ -1,5 +1,6 @@
 from boto.s3.connection import S3Connection
 from boto.s3.key import Key
+from boto.exception import S3CreateError, S3ResponseError
 from config import AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET
 import ntpath
 
@@ -12,12 +13,18 @@ s3_conn = S3Connection(AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET)
 # Create a new container for files
 #
 def create_container(bucket):
+    ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
-    #bucketname = userID
     bucketname = bucketname.lower()
-    bucket = s3_conn.create_bucket(bucketname)
-    print "bucket successfully created..."
-    return bucket
+    try:
+        bucket = s3_conn.create_bucket(bucketname)
+    except S3CreateError:
+        print "error by creating bucket..."
+        return ret_val
+    if bucket is not None:
+        ret_val = True
+        print "bucket successfully created..."
+    return ret_val
 
 #
 # CHECK FUNCTIONS
@@ -31,9 +38,9 @@ def list_files(bucket):
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
-    print "File list from bucket " + bucketname + ":"
-    for x in bucket_content:
-        print x.name
+    bucket_files = [x.name for x in bucket_content]    
+    return bucket_files
+
 
 def file_exists(bucket, filename):
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
@@ -112,23 +119,33 @@ def get_download_url(bucket, filename):
 #
 
 def delete_file(bucket, filename):
+    ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     k = Key(bucket_content)
     k.key = filename
     bucket_content.delete_key(k)
+    if not file_exists(bucket, filename):
+        ret_val = True
+    else:
+        ret_val = False
+    return ret_val
 
 def delete_container(bucket):
-    print "Deleting bucket in process..."
+    ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
     bucketname = bucketname.lower()
-    print "This bucket will be deleted: " + bucketname
-    bucket_content = s3_conn.get_bucket(bucketname)
-    print "getting bucket content..."
+    try:
+        bucket_content = s3_conn.get_bucket(bucketname)
+    except S3ResponseError:
+        return True
     #delete all files in bucket before delete bucket
     for key in bucket_content.list():
         key.delete()
-    print "all keys successfully deleted..."
     s3_conn.delete_bucket(bucketname)
-    print "deleting bucket successfully"
+    if not container_exists(bucket):
+        ret_val = True
+    else:
+        ret_val = False
+    return ret_val
