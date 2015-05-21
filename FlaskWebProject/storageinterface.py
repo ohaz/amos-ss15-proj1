@@ -55,7 +55,7 @@ def list_files(bucketID):
 
 
 def delete_file(bucketID, filename):
-    """ File aus container löschen
+    """ delete file from container
     Args:
         bucketID: container name
         filename: file to delete
@@ -66,7 +66,7 @@ def delete_file(bucketID, filename):
 
 
 def delete_container(bucketID):
-    """ Container löschen
+    """ delete container
     Args:
         bucketID: container name
     Returns:
