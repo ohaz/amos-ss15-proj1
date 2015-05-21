@@ -39,13 +39,13 @@ def list_files(container):
     return storage_adapter.list_files(container)
 
 def delete_file(container, filename):
-    storage_adapter.delete_file(container, filename)
+    return storage_adapter.delete_file(container, filename)
 
 def delete_container(container):
-    storage_adapter.delete_container(container)
+    return storage_adapter.delete_container(container)
 
 def upload_from_path(container, path):
-    storage_adapter.upload_from_path(container, path)
+    return storage_adapter.upload_from_path(container, path)
 
 def upload_from_text(container, filename, text):
-    storage_adapter.upload_from_text(container, filename, text)
+    return storage_adapter.upload_from_text(container, filename, text)
