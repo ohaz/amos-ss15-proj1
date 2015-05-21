@@ -210,37 +210,41 @@ REST API
 '''
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>', methods=['GET'])
-def rest_list_files(bucketID):
+@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
+def rest_list_files(bucket_id):
     """ Lists files in container """
+    storageinterface.list_files(bucket_id)
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>', methods=['DELETE'])
-def rest_delete_container(bucketID):
+@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
+def rest_delete_container(bucket_id):
     """ Deletes specified container """
+    storageinterface.delete_container(bucket_id)
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['GET'])
-def rest_download_file_to_text(bucketID, fileID):
+@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['GET'])
+def rest_download_file_to_text(bucket_id, file_id):
     """ Returns specified file in container as text """
+    storageinterface.download_file_to_text(bucket_id, file_id)
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['POST'])
-def rest_upload_from_text(bucketID, fileID):
+@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['POST'])
+def rest_upload_from_text(bucket_id, file_id):
     """ Uploads text to new file in container """
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['PUT'])
-def rest_overwrite_file_from_text(bucketID, fileID):
+@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['PUT'])
+def rest_overwrite_file_from_text(bucket_id, file_id):
     """ Uploads text to file in container """
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['DELETE'])
-def rest_delete_file(bucketID, fileID):
+@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['DELETE'])
+def rest_delete_file(bucket_id, file_id):
     """ Deletes file in container """
+    storageinterface.delete_file(bucket_id, file_id)
     return None
