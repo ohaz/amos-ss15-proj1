@@ -1,7 +1,4 @@
 from config import cloudplatform
-#import azurestorage
-#import googlestorage
-#import awsstorage
 
 storage_adapter = None
 
@@ -15,37 +12,121 @@ elif cloudplatform == "azure":
     import azurestorage
     storage_adapter = azurestorage
 
-#def get_storage_adapter():
-#    if cloudplatform == "google":
-#        return googlestorage
-#    elif cloudplatform == "aws":
-#        return awsstorage
-#    elif cloudplatform == "azure":
-#        return azurestorage
 
-#
-# Create a new container for files
-#
-def create_container(userID):
-    return storage_adapter.create_container(userID)
+def create_container(bucketID):
+    """ Creates Container with given bucketID
+    Args:
+        bucketID: container name
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.create_container(bucketID)
 
-def container_exists(container):
-    return storage_adapter.container_exists(container)
 
-def file_exists(container, filename):
-    return storage_adapter.file_exists(container, filename)
+def container_exists(bucketID):
+    """ Check if container with ID exists
+    Args:
+        bucketID: container name
+    Returns:
+        true if exists
+    """
+    return storage_adapter.container_exists(bucketID)
 
-def list_files(container):
-    return storage_adapter.list_files(container)
 
-def delete_file(container, filename):
-    return storage_adapter.delete_file(container, filename)
+def file_exists(bucketID, filename):
+    """ Checks if file in container exists
+    Args:
+        bucketID: container name
+        filename: file to search
+    Returns:
+        true if exists
+    """
+    return storage_adapter.file_exists(bucketID, filename)
 
-def delete_container(container):
-    return storage_adapter.delete_container(container)
 
-def upload_from_path(container, path):
-    return storage_adapter.upload_from_path(container, path)
+def list_files(bucketID):
+    """ Lists files in specified bucket
+    Args:
+        bucketID
+    Returns:
+        List of FileIDs
+    """
+    return storage_adapter.list_files(bucketID)
 
-def upload_from_text(container, filename, text):
-    return storage_adapter.upload_from_text(container, filename, text)
+
+def delete_file(bucketID, filename):
+    """ File aus container löschen
+    Args:
+        bucketID: container name
+        filename: file to delete
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.delete_file(bucketID, filename)
+
+
+def delete_container(bucketID):
+    """ Container löschen
+    Args:
+        bucketID: container name
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.delete_container(bucketID)
+
+
+def upload_from_path(bucketID, path):
+    """ Uploads a local file from client to the cloud
+    Args:
+        bucketID: destination container name
+        path: local filepath
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.upload_from_path(bucketID, path)
+
+
+def upload_from_text(bucketID, filename, text):
+    """ Uploads text to container in specified file
+    Args:
+        bucketID: destination container name
+        filename: destination file
+        text: text to upload
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.upload_from_text(bucketID, filename, text)
+
+
+def download_file_to_path(bucketID, filename, path):
+    """ Downloads file from container to local path
+    Args:
+        bucketID: container name
+        filename: file to download
+        path: destination local filepath
+    Returns:
+        true if succeed
+    """
+    return storage_adapter.download_file_to_path(bucketID, filename, path)
+
+
+def download_file_to_text(bucketID, filename):
+    """ Downloads file from container to text
+    Args:
+        bucketID: container name
+        filename: file to download
+    Returns:
+        text string
+    """
+    return storage_adapter.download_file_to_text(bucketID, filename)
+
+
+def get_download_url(bucketID, filename):
+    """ Returns a download for specified file in container
+    Args:
+        bucketID: container name
+        filename: file to download
+    Returns:
+        text string url
+    """
+    return storage_adapter.get_download_url(bucketID, filename)
