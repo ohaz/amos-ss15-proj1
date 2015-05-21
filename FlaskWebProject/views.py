@@ -45,6 +45,7 @@ def before_request():
 def create_bucket():
     return storageinterface.create_container('test1')
 
+
 @app.route('/')
 @app.route('/index')
 @login_required
@@ -55,18 +56,17 @@ def home():
     )
 
 
-'''
-UserName Password Login
-'''
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    """UserName Password Login"""
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('home'))
     error = None
     form = LoginForm(request.form)
     if request.method == 'POST':
         if form.validate_on_submit():
-            user = User.query.filter_by(username=request.form['username']).first()
+            user = User.query.filter_by(
+                username=request.form['username']).first()
             if user is not None and user.sso == "none":
                 password, salt = user.password.split(':')
                 if password == hashlib.sha256(salt.encode() + request.form['password'].encode()).hexdigest():
@@ -82,6 +82,7 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
+    """UserName Password Register"""
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('home'))
     form = RegisterForm()
@@ -92,7 +93,8 @@ def register():
         user = User.query.filter_by(username=request.form['username']).first()
         email = User.query.filter_by(email=request.form['email']).first()
         if user is None and email is None:
-            password = hashlib.sha256(salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
+            password = hashlib.sha256(
+                salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
             user = User(
                 username=form.username.data,
                 email=form.email.data,
@@ -141,14 +143,17 @@ def facebook_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
-        # TODO: excalate error to user: 'There was a problem logging in with Google.'
+        # TODO: excalate error to user: 'There was a problem logging in with
+        # Google.'
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = facebook.get('/me').data
     user = User.query.filter(User.email == user_data['email']).first()
-    # TODO: Security Issue, Disable Login from different SSO's with same mail to same user
+    # TODO: Security Issue, Disable Login from different SSO's with same mail
+    # to same user
     if user is None:
-        new_user = User(email=user_data['email'], username=user_data['id'], password=" ", sso="facebook")
+        new_user = User(email=user_data['email'], username=user_data[
+                        'id'], password=" ", sso="facebook")
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
@@ -181,17 +186,61 @@ def google_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
-        # TODO: excalate error to user: 'There was a problem logging in with Google.'
+        # TODO: excalate error to user: 'There was a problem logging in with
+        # Google.'
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = google.get('/userinfo/v2/me').data
     user = User.query.filter(User.email == user_data['email']).first()
-    # TODO: Security Issue, Disable Login from different SSO's with same mail to same user
+    # TODO: Security Issue, Disable Login from different SSO's with same mail
+    # to same user
     if user is None:
-        new_user = User(email=user_data['email'], username=user_data['id'], password=" ", sso="google")
+        new_user = User(
+            email=user_data['email'], username=user_data['id'], password=" ", sso="google")
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
     else:
         login_user(user)
     return redirect(next_url)
+
+
+'''
+REST API
+'''
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>', methods=['GET'])
+def rest_list_files(bucketID):
+    """ Lists files in container """
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>', methods=['DELETE'])
+def rest_delete_container(bucketID):
+    """ Deletes specified container """
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['GET'])
+def rest_download_file_to_text(bucketID, fileID):
+    """ Returns specified file in container as text """
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['POST'])
+def rest_upload_from_text(bucketID, fileID):
+    """ Uploads text to new file in container """
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['PUT'])
+def rest_overwrite_file_from_text(bucketID, fileID):
+    """ Uploads text to file in container """
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucketID>/<string:fileID>', methods=['DELETE'])
+def rest_delete_file(bucketID, fileID):
+    """ Deletes file in container """
+    return None
