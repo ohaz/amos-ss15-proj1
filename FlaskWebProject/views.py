@@ -41,29 +41,13 @@ def before_request():
     g.user = current_user
 
 
-@app.route('/create_bucket')
-def create_bucket():
-    storageinterface.create_container('test1')
-    return redirect(url_for('home'))
-
-@app.route('/upload_from_text')
-def upload_from_text():
-    storageinterface.upload_from_text('test1', 'filename.txt', 'content')
-    return redirect(url_for('home'))
-
-@app.route('/delete_bucket')
-def delete_bucket():
-    storageinterface.delete_container('test1')
-    return redirect(url_for('home'))
-
-
 @app.route('/')
 @app.route('/index')
 @login_required
 def home():
     """Renders the home page."""
     return render_template(
-        'index.html',
+        'index.html', user=g.user
     )
 
 
