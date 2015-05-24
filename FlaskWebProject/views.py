@@ -206,27 +206,29 @@ REST API
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
 def rest_list_files(bucket_id):
     """ Lists files in container """
-    storageinterface.list_files(bucket_id)
+    #storageinterface.list_files(bucket_id)
     return None
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
-    storageinterface.delete_container(bucket_id)
+    #storageinterface.delete_container(bucket_id)
     return None
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['GET'])
 def rest_download_file_to_text(bucket_id, file_id):
     """ Returns specified file in container as text """
-    storageinterface.download_file_to_text(bucket_id, file_id)
+    #storageinterface.download_file_to_text(bucket_id, file_id)
     return None
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['POST'])
 def rest_upload_from_text(bucket_id, file_id):
     """ Uploads text to new file in container """
+    content = request.json['content']
+    storageinterface.upload_from_text(bucket_id, file_id, content)
     return "test"
 
 
@@ -239,5 +241,5 @@ def rest_overwrite_file_from_text(bucket_id, file_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['DELETE'])
 def rest_delete_file(bucket_id, file_id):
     """ Deletes file in container """
-    storageinterface.delete_file(bucket_id, file_id)
+    #storageinterface.delete_file(bucket_id, file_id)
     return None
