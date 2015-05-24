@@ -47,7 +47,7 @@ def before_request():
 def home():
     """Renders the home page."""
     return render_template(
-        'index.html', user=g.user
+        'index.html', user_id=current_user.get_id()
     )
 
 
@@ -227,7 +227,7 @@ def rest_download_file_to_text(bucket_id, file_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['POST'])
 def rest_upload_from_text(bucket_id, file_id):
     """ Uploads text to new file in container """
-    return None
+    return "test"
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['PUT'])
