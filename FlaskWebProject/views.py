@@ -96,8 +96,15 @@ def register():
                 password=password,
                 sso="none"
             )
+
+            # save new user in database
             db.session.add(user)
             db.session.commit()
+
+            # create container/bucket for the new registered user
+            storageinterface.create_container(user.get_id())
+
+            # login new user now
             login_user(user)
             return redirect(url_for('home'))
     return render_template('register.html', form=form)
@@ -206,30 +213,29 @@ REST API
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
 def rest_list_files(bucket_id):
     """ Lists files in container """
-    #storageinterface.list_files(bucket_id)
     return None
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
-    #storageinterface.delete_container(bucket_id)
-    return None
+    return storageinterface.delete_container(bucket_id)
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['GET'])
 def rest_download_file_to_text(bucket_id, file_id):
     """ Returns specified file in container as text """
-    #storageinterface.download_file_to_text(bucket_id, file_id)
-    return None
+    return storageinterface.download_file_to_text(bucket_id, file_id)
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['POST'])
 def rest_upload_from_text(bucket_id, file_id):
     """ Uploads text to new file in container """
     content = request.json['content']
-    storageinterface.upload_from_text(bucket_id, file_id, content)
-    return "test"
+    response = "200"
+    if not storageinterface.upload_from_text(bucket_id, file_id, content):
+        response = "500"
+    return response
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['PUT'])
