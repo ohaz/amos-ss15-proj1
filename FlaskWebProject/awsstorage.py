@@ -17,7 +17,7 @@ s3_conn = S3Connection(AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET)
 #
 def create_container(bucket):
     ret_val = False
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     try:
         bucket = s3_conn.create_bucket(bucketname)
@@ -33,13 +33,13 @@ def create_container(bucket):
 # CHECK FUNCTIONS
 #
 def container_exists(bucket):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     return bucketname in [x.name for x in s3_conn.get_all_buckets()]
 
 # return a list with the names of all files in the bucket 
 def list_files(bucket):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     bucket_files = [x.name for x in bucket_content]    
@@ -56,7 +56,7 @@ def file_exists(bucket, filename):
         return False
 
 def file_change_permissions(bucket, filename, permission):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     key = bucket_content.get_key(filename)
@@ -69,7 +69,7 @@ def file_change_permissions(bucket, filename, permission):
 
 # create a file with the specific filename and upload the string into
 def upload_from_text(bucket, filename, text):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_s3 = s3_conn.get_bucket(bucketname)
     k = Key(bucket_s3)
@@ -81,7 +81,7 @@ def upload_from_text(bucket, filename, text):
 # before uploading the data, it will be checked if the file exists
 # if the file exists the upload will fail
 def upload_from_path(bucket, path):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     filename = ntpath.basename(path)
     bucket_s3 = s3_conn.get_bucket(bucketname)
@@ -100,7 +100,7 @@ def upload_from_path(bucket, path):
 
 # download file to path from S3
 def download_file_to_path(bucket, filename, path):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_s3 = s3_conn.get_bucket(bucketname)
     if file_exists(bucket, filename) is True:
@@ -115,7 +115,7 @@ def download_file_to_path(bucket, filename, path):
 # it`s only accessable when the permissons are set to public.
 # default permissions are only to the user not public
 def get_download_url(bucket, filename):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     key = bucket_content.get_key(filename)
@@ -133,7 +133,7 @@ def get_download_url(bucket, filename):
 # delete file from bucket, existing from file will be checked
 def delete_file(bucket, filename):
     ret_val = False
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     k = Key(bucket_content)
@@ -148,7 +148,7 @@ def delete_file(bucket, filename):
 
 def delete_container(bucket):
     ret_val = False
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     try:
         bucket_content = s3_conn.get_bucket(bucketname)
