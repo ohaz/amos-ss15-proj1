@@ -100,7 +100,7 @@ def copy_from_local(path):
     GLOBAL_DIR = os.path.join('cloud_specific_files', 'global')
     if os.path.exists(os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop')):
         shutil.rmtree(os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'))
-    shutil.copytree(path, os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'))
+    shutil.copytree(path, os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'),ignore = shutil.ignore_patterns("cloud-deployer") )
 
 def main():
 
