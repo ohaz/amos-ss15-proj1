@@ -11,9 +11,13 @@ prefix = "amos-"
 
 def create_container(name, public=True):
     name = prefix + str(name)
-    blob_service.create_container(name)
-    if public:
-        blob_service.set_container_acl(name, x_ms_blob_public_access='container')
+    try:
+        blob_service.create_container(name)
+        if public:
+            blob_service.set_container_acl(name, x_ms_blob_public_access='container')
+    except:
+        return False
+    return True
 
 
 #
@@ -70,11 +74,19 @@ def get_download_url(container, filename):
 
 def delete_file(container, filename):
     container = prefix + str(container)
-    blob_service.delete_blob(container, filename)
+    try:
+        blob_service.delete_blob(container, filename)
+        return True
+    except:
+        return False
 
 def delete_container(container):
     container = prefix + str(container)
-    blob_service.delete_container(container)
+    try:
+        blob_service.delete_container(container)
+        return True
+    except:
+        return False
 
 #
 # UTIL
@@ -90,4 +102,7 @@ def file_exists(container, filename):
 
 def list_files(container):
     container = prefix + str(container)
-    return blob_service.list_blobs(container)
+    return [x.name for x in blob_service.list_blobs(container).blobs]
+
+def list_containers():
+    return [x.name for x in blob_service.list_containers()]
