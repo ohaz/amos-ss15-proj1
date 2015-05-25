@@ -18,8 +18,6 @@
     <PythonWsgiHandler>$(MSBuildProjectName).app</PythonWsgiHandler>
     <Name>FlaskWebProject</Name>
     <RootNamespace>FlaskWebProject</RootNamespace>
-    <InterpreterId>{2af0f10d-7135-4994-9156-5d01c9c11b7e}</InterpreterId>
-    <InterpreterVersion>2.7</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -72,9 +70,6 @@
     <Content Include="FlaskWebProject\templates\layout.html" />
     <Content Include="web.config" />
     <Content Include="web.debug.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <InterpreterReference Include="{2af0f10d-7135-4994-9156-5d01c9c11b7e}\2.7" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.Web.targets" />
   <!-- Specify pre- and post-build commands in the BeforeBuild and 
