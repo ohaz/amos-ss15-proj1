@@ -7,6 +7,9 @@ __author__ = 'ohaz'
 
 _possible_clouds = {'azure': [False, None], 'google': [False, None], 'aws': [False, None]}
 
+IGNORE_PATTERN = ''     # These Pathes will be ignored, 
+                        # when generating the repo, from which will be deployed
+
 import os
 import argparse
 import shutil
@@ -85,12 +88,15 @@ def download_branch(url):
             z.extractall(GLOBAL_DIR)
     except:
         print('Unzipping did not work. Probably your internet died while you were downloading the file.')
-
+    
     # Moves the unzipped folder to the correct structure
 
     foldername = file_name.split('.')[0]
     shutil.move(os.path.join(GLOBAL_DIR, "amos-ss15-proj1-"+foldername), os.path.join(GLOBAL_DIR, "amos-ss15-proj1-develop"))
-
+    
+    #removes unnecessary folder
+    shutil.rmtree(os.path.join(GLOBAL_DIR,"amos-ss15-proj1-develop",'cloud-deployer'))
+    shutil.rmtree(os.path.join(GLOBAL_DIR,"amos-ss15-proj1-develop",IGNORE_PATTERN))    
     return file_name
 
 def copy_from_local(path):
@@ -100,7 +106,7 @@ def copy_from_local(path):
     GLOBAL_DIR = os.path.join('cloud_specific_files', 'global')
     if os.path.exists(os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop')):
         shutil.rmtree(os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'))
-    shutil.copytree(path, os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'))
+    shutil.copytree(path, os.path.join(GLOBAL_DIR, 'amos-ss15-proj1-develop'),ignore = shutil.ignore_patterns("cloud-deployer",IGNORE_PATTERN) )
 
 def main():
 
@@ -116,7 +122,12 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument("-b", "--branch", default='develop', help='The branch to download. Defaults to develop')
     group.add_argument("-l", "--local_path", default=None, help='Uses a local path instead of the github repo')
+    parser.add_argument("-t", "--tests", default=False, dest='tests', action='store_true', help='Includes testsuites for deployment')
     args = parser.parse_args()
+    
+    if not args.tests:
+        global IGNORE_PATTERN
+        IGNORE_PATTERN = 'tests'
 
     # Decide if script needs to download or to copy the repository
     if args.local_path is None:
