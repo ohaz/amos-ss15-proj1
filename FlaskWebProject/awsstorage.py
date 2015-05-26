@@ -112,12 +112,8 @@ def get_download_url(bucket, filename):
 #
 
 def delete_file(bucket, filename):
-<<<<<<< HEAD
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
-=======
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
->>>>>>> origin/develop
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     k = Key(bucket_content)
@@ -125,13 +121,8 @@ def delete_file(bucket, filename):
     bucket_content.delete_key(k)
 
 def delete_container(bucket):
-<<<<<<< HEAD
-    print "Deleting bucket in process..."
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
-=======
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
->>>>>>> origin/develop
     bucketname = bucketname.lower()
     print "This bucket will be deleted: " + bucketname
     bucket_content = s3_conn.get_bucket(bucketname)
