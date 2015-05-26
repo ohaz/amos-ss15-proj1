@@ -15,6 +15,9 @@
     <script src="{{ url_for('static', filename='scripts/dojotoolkit/dojo/dojo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/rechner-brutto-netto/index-web.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/jquery-2.1.4.min.js') }}" defer></script>
+    <script>
+      var user_id = '{{ user_id }}';
+    </script>
     <script src="{{ url_for('static', filename='scripts/index.js') }}" defer></script>
   </head>
   <body class="bg-detail has-top-nav-bar">
