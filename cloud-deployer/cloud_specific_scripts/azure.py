@@ -15,7 +15,6 @@ add_to_reqs = ['azure']
 from util import copy_repo_to_specific, add_to_requirements
 
 def run_subprocess(cmd):
-    # A function to run a subprocess. Should probably get moved to the util file in the future
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=1)
     for line in iter(p.stdout.readline, b''):
         print(line)
@@ -24,8 +23,6 @@ def run_subprocess(cmd):
 
 # Implement this function
 def deploy():
-    # Deployer for Azure
-    # Prepares for deployment and then runs the necessary git commands
     try:
         prepare_deployment()
     except StandardError, e:
@@ -42,7 +39,6 @@ def deploy():
     print(' > > Done Pushing')
 
 def prepare_deployment():
-    # Preparing for the deployment by downloading the azure repo and copying the files needed
     get_azure_git()
     copy_repo_to_specific('azure')
     add_to_requirements('azure', add_to_reqs)
@@ -51,7 +47,6 @@ def prepare_deployment():
         shutil.move(os.path.join(OWN_FOLDER, 'repo', m[0]), os.path.join(OWN_FOLDER, 'repo', m[1]))
 
 def get_azure_git():
-    # Download azure repo
     from cloud_specific_files.azure import deploy_config
     url = deploy_config.git_clone_url
     to = os.path.join(OWN_FOLDER, 'azure_repo')
