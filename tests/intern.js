@@ -64,11 +64,21 @@ define({
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [
+		'tests/functional/connect-to-azure',
+		'tests/functional/azure/login',
+		'tests/functional/azure/index-web',
+		'tests/functional/azure/index-web_rev',
+		'tests/functional/azure/index-web-comparison',
 		'tests/functional/connect-to-google',
-		'tests/functional/login',
-		'tests/functional/index-web',
-		'tests/functional/index-web_rev',
-		'tests/functional/index-web-comparison'
+		'tests/functional/google/login',
+		'tests/functional/google/index-web',
+		'tests/functional/google/index-web_rev',
+		'tests/functional/google/index-web-comparison',
+		'tests/functional/connect-to-aws',
+		'tests/functional/aws/login',
+		'tests/functional/aws/index-web',
+		'tests/functional/aws/index-web_rev',
+		'tests/functional/aws/index-web-comparison'
 	],
 
 	// A regular expression matching URLs to files that should not be included in code coverage analysis

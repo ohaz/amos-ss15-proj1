@@ -9,7 +9,7 @@ define([
         // before the suite starts
         setup: function () {
             return this.remote
-                .get(require.toUrl('amos-proj1-flask.azurewebsites.net'));
+                .get(require.toUrl('http://amos-proj1-test.azurewebsites.net/'));
         }
     });
 });
