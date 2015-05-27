@@ -247,5 +247,5 @@ def rest_overwrite_file_from_text(bucket_id, file_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['DELETE'])
 def rest_delete_file(bucket_id, file_id):
     """ Deletes file in container """
-    #storageinterface.delete_file(bucket_id, file_id)
+    # storageinterface.delete_file(bucket_id, file_id)
     return None
