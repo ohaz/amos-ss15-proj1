@@ -46,7 +46,7 @@ def list_files(bucket):
     return bucket_files
 
 def file_exists(bucket, filename):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     possible_key = bucket_content.get_key(filename)
