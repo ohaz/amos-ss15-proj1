@@ -36,7 +36,7 @@ def list_files(bucket):
         print x.name
 
 def file_exists(bucket, filename):
-    bucketname = AWS_S3_ACCESS_KEY + "_" + bucket
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
     possible_key = bucket_content.get_key(filename)
@@ -103,6 +103,18 @@ def get_download_url(bucket, filename):
     if key is not None:
         file_url = key.generate_url(0, query_auth=False, force_http=True)
         return file_url
+    else:
+        return None
+
+def download_file_to_text(bucket, filename):
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
+    bucketname = bucketname.lower()
+    bucket_s3 = s3_conn.get_bucket(bucketname)
+    if file_exists(bucket, filename) is True:
+        k = Key(bucket_s3)
+        k.key = filename
+        content = k.get_contents_as_string()
+        return content
     else:
         return None
 
