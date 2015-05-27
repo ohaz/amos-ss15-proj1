@@ -125,6 +125,18 @@ def get_download_url(bucket, filename):
     else:
         return None
 
+def download_file_to_text(bucket, filename):
+    bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
+    bucketname = bucketname.lower()
+    bucket_s3 = s3_conn.get_bucket(bucketname)
+    if file_exists(bucket, filename) is True:
+        k = Key(bucket_s3)
+        k.key = filename
+        content = k.get_contents_as_string()
+        return content
+    else:
+        return None
+
 
 #
 # DELETE FILES / CONTAINERS
