@@ -42,9 +42,9 @@ def run_subprocess(cmd):
 
 
 def deploy_app_to_aws():
-    commandString = '. '+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+' '+OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')+' '+config.AWS_EB_ACCESS_KEY+' '+config.AWS_EB_SECRET_KEY
-    #commandString = '. '+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+' '+OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')
-    subprocess.call(commandString, shell=True)
+    arglist = OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')+' '+config.AWS_EB_ACCESS_KEY+' '+config.AWS_EB_SECRET_KEY
+    bashCommand = "/bin/bash "+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+ ' ' + arglist 
+    os.system(bashCommand)
 
 def copy_config_to_repo():
     target = os.path.join(OWN_FOLDER, 'repo', 'config.py')
