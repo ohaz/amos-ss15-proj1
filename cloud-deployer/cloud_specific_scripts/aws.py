@@ -40,7 +40,6 @@ def run_subprocess(cmd):
     p.stdout.close()
     p.wait()
 
-
 def deploy_app_to_aws():
     arglist = OWN_FOLDER+' '+os.path.join(OWN_FOLDER, 'repo')+' '+config.AWS_EB_ACCESS_KEY+' '+config.AWS_EB_SECRET_KEY
     bashCommand = "/bin/bash "+os.path.join(OWN_FOLDER, 'deploy_to_aws.sh')+ ' ' + arglist 
