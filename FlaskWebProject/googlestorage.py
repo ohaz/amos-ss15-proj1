@@ -5,13 +5,10 @@ from httplib2 import Http
 from apiclient.discovery import build
 
 from apiclient.http import MediaIoBaseUpload, MediaFileUpload
-from io import BytesIO
+from io import StringIO
 import mimetypes
 
 from config import _LOCAL_EXEC_, _PROJ_ID_, client_email_loc, client_email_glob, private_key_file
-
-# TODO
-#   - Authentification! -- public modifiers etc.!
 
 # import recoverable Exception
 from oauth2client.client import AccessTokenRefreshError
@@ -24,12 +21,58 @@ from apiclient.errors import *
 
 
 #
+# UTIL FUNCTIONS
+#
+
+def getExceptions():
+    ex = []
+    for name, obj in inspect.getmembers(sys.modules['apiclient.errors']):
+        if inspect.isclass(obj) and issubclass(obj, Exception):
+            ex += [obj]
+    return ex
+
+# Establish secure connection to Google-Storage-servers
+def get_service(service_a, version_a, scope, local=False):
+    def checkoutCredentials(scope, loc=False):
+        credentials = None
+        if local:
+            with open(private_key_file) as f:
+                private_key = f.read()
+            credentials = SignedJwtAssertionCredentials(
+                client_email_loc, private_key, scope)
+        else:
+            credentials = AppAssertionCredentials(scope)
+        return credentials
+    credentials = checkoutCredentials(scope, loc=local)
+    http_auth = credentials.authorize(Http())
+    return build(service_a, version_a, http=http_auth)
+
+
+def get_container(Bucket):
+    GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
+    req = GS_storage.buckets().get(bucket=Bucket)
+    return req.execute()
+
+
+def list_container():
+    GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
+    req = GS_storage.buckets().list(project=_PROJ_ID_)
+    resp = req.execute()
+    if 'items' in resp:
+        return [str(z['name']) for z in resp['items']]
+    else:
+        return []
+
+
+#
 # Connection to Google
 #
 GS_service = 'storage'
 GS_version = 'v1'
 GS_scope = 'https://www.googleapis.com/auth/devstorage.read_write'
 GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
+GS_identifier = 'bnr-id-'
+exceptions = tuple(getExceptions())
 
 
 #
@@ -37,6 +80,8 @@ GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
 #
 
 def create_container(Bucket, public=True):
+    Bucket = GS_identifier+str(Bucket)
+    
     global GS_storage
     # Returns if bucket could be deleted,
     # throws Exception if creation of Bucket not possible [example something
@@ -71,16 +116,19 @@ def create_container(Bucket, public=True):
 #
 
 def container_exists(container):
+    container = GS_identifier+str(container)
     return container in list_container()
 
 
 def file_exists(container, filename):
     global GS_storage
+    container = GS_identifier+str(container)
     return filename in list_files(container)
 
 
 def list_files(Bucket):  # list/list_next
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     def call_list_files(Bucket):
         value = []
@@ -117,9 +165,10 @@ def list_files(Bucket):  # list/list_next
 
 def upload_from_text(Bucket, Filename, File):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     def call_upload_file(Bucket, Filename, File):  # get MEDIA
-        FileObject = BytesIO(File)
+        FileObject = StringIO(File)
         media_body = MediaIoBaseUpload(
             FileObject, mimetype='text/plain', resumable=True)
         req = GS_storage.objects().insert(
@@ -149,6 +198,7 @@ def upload_from_text(Bucket, Filename, File):
 
 def upload_from_path(Bucket, path):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     def call_upload_file(Bucket, Filename):  # get MEDIA
         (_type_, encoding) = mimetypes.guess_type(Filename)
@@ -188,6 +238,7 @@ def upload_from_path(Bucket, path):
 
 def download_file_to_text(Bucket, Filename):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     def call_get_file(Bucket, Filename):  # get MEDIA
         storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
@@ -212,6 +263,7 @@ def download_file_to_text(Bucket, Filename):
 
 def get_download_url(Bucket, FileName):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     def call_get_file_meta(Bucket, Filename):  # get MEDIA
         storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
@@ -241,6 +293,7 @@ def get_download_url(Bucket, FileName):
 
 
 def download_file_to_path(Bucket, Filename):
+    Bucket = GS_identifier+str(Bucket)
     return False
 
     # TODO This code may be adapted to work like anticipated, but for
@@ -277,6 +330,7 @@ def download_file_to_path(Bucket, Filename):
 
 def delete_container(Bucket):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
 
     # Returns if bucket could be deleted,
     # throws Exception if deletion of Bucket not possible [example something
@@ -309,6 +363,7 @@ def delete_container(Bucket):
 
 def delete_file(Bucket, Filename):
     global GS_storage
+    Bucket = GS_identifier+str(Bucket)
     # Returns if bucket could be deleted,
     # throws Exception if deletion of Bucket not possible [example something
     # is left in Bucket]
@@ -333,60 +388,6 @@ def delete_file(Bucket, Filename):
             return False
     except exceptions:
         return False
-
-
-#
-# UTIL FUNCTIONS
-#
-
-def getExceptions():
-    ex = []
-    for name, obj in inspect.getmembers(sys.modules['apiclient.errors']):
-        if inspect.isclass(obj) and issubclass(obj, Exception):
-            ex += [obj]
-    return ex
-exceptions = tuple(getExceptions())
-
-# TODO
-# exceptions for api-client
-
-# from apiclient.errors get classes with instance of Error as list to tuples
-# exceptions =
-
-
-#
-# Establish secure connection to Google-Storage-servers
-#
-def get_service(service_a, version_a, scope, local=False):
-    def checkoutCredentials(scope, loc=False):
-        credentials = None
-        if local:
-            with open(private_key_file) as f:
-                private_key = f.read()
-            credentials = SignedJwtAssertionCredentials(
-                client_email_loc, private_key, scope)
-        else:
-            credentials = AppAssertionCredentials(scope)
-        return credentials
-    credentials = checkoutCredentials(scope, loc=local)
-    http_auth = credentials.authorize(Http())
-    return build(service_a, version_a, http=http_auth)
-
-
-def get_container(Bucket):
-    GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
-    req = GS_storage.buckets().get(bucket=Bucket)
-    return req.execute()
-
-
-def list_container():
-    GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
-    req = GS_storage.buckets().list(project=_PROJ_ID_)
-    resp = req.execute()
-    if 'items' in resp:
-        return [str(z['name']) for z in resp['items']]
-    else:
-        return []
 
 
 #
@@ -424,94 +425,3 @@ def update_file():  # update META/MEDIA
 def watchAll_file():
     raise NotImplementedError
 
-
-#
-# DEBUGG - functions
-#
-
-
-def test_google_storage_handler():
-    test_bucket = 'id_debugg'
-    delete, create = True, True
-
-    value = ""
-
-    # CREATE Container
-    if create:
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(list_container())
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(container_exists(test_bucket))
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(create_container(test_bucket))
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(list_container())
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(container_exists(test_bucket))
-        value += "<br/>################################################<br/>"
-
-    # CREATE FILES
-    value += "<br/>###################    id-0   ##################<br/>"
-    value += str(download_file_to_text(test_bucket, 'dummy.txt'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>################### id-0 tmp.txt ###############<br/>"
-    value += str(list_files(test_bucket))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>############# id-0 insert_test.txt #############<br/>"
-    value += str(upload_from_path(test_bucket, 'tmp_media.txt'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>############# id-0 replace_test.txt #############<br/>"
-    value += str(upload_from_text(test_bucket, 'tmp_media_duplo.txt',
-                                  'This is a Ludicrious Test, this should hopefully work. [This is new Text by the Way]'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>################### id-0 tmp.txt ###############<br/>"
-    value += str(list_files(test_bucket))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>###################    id-0   ##################<br/>"
-    value += str(download_file_to_path(test_bucket, 'tmp_media.txt'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>###################    id-0   ##################<br/>"
-    value += str(download_file_to_path(test_bucket, 'tmp_media_duplo.txt'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>############# id-0 remove_test.txt #############<br/>"
-    value += str(delete_file(test_bucket, 'tmp_media.txt'))
-    value += "<br/>################################################<br/>"
-
-    value += "<br/>################### id-0 tmp.txt ###############<br/>"
-    value += str(list_files(test_bucket))
-    value += "<br/>################################################<br/>"
-
-    if delete:
-        # DELETE CONTAINER
-        value += "<br/>###################    id-0   ##################<br/>"
-        value += str(get_container(test_bucket))
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(delete_container(test_bucket))
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(list_container())
-        value += "<br/>################################################<br/>"
-
-        value += "<br/>################### CONTAINER ##################<br/>"
-        value += str(container_exists(test_bucket))
-        value += "<br/>################################################<br/>"
-
-    return value
