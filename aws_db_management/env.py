@@ -20,8 +20,9 @@ fileConfig(config.config_file_name)
 # target_metadata = mymodel.Base.metadata
 parent_dir = os.path.abspath(os.path.join(os.getcwd(), ".."))
 sys.path.append(parent_dir)
-from FlaskWebProject import db
-target_metadata = db.metadata
+from FlaskWebProject.models import Base
+import FlaskWebProject.models
+target_metadata =Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
