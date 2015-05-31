@@ -44,6 +44,8 @@ class User(Base):
 class UserUserfile(Base):
     # create with:
     # UserUserfile(Userfile("folder","file"), user, permission=7)
+    # check with:
+    # session.query(UserUserfile).filter(UserUserfile.user_id==1,UserUserfile.userfile_id==2).first().permission
     __tablename__ = 'user_userfile'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     userfile_id = db.Column(db.Integer, db.ForeignKey('userfile.id'), primary_key=True)
@@ -83,9 +85,12 @@ class Userfile(Base):
     def __repr__(self):
         return '<Userfile %r>' % (self.name)
 
-
 """
-class Group(db.Model):
+User -> Group -> File Mapping:
+additional info: http://docs.sqlalchemy.org/en/latest/orm/extensions/associationproxy.html
+
+# should be class Group(Base):
+class Group(db.Model): 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), index=True, unique=True)
     files = db.relationship('File', secondary=groupToFile,
@@ -104,18 +109,14 @@ class Group(db.Model):
     def __repr__(self):
         return '<Group %r>' % (self.name)
 
-userToFile = db.Table('userToFile',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('file_id', db.Integer, db.ForeignKey('file.id')),
-    db.Column('permission', db.Integer)
-)
-
+# should be class GroupUserfile(Base):
 groupToFile = db.Table('groupToFile',
     db.Column('group_id', db.Integer, db.ForeignKey('group.id')),
     db.Column('file_id', db.Integer, db.ForeignKey('file.id')),
     db.Column('permission', db.Integer)
 )
 
+# should be class UserGroup(Base):
 userToGroup = db.Table('userToGroup',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
     db.Column('group_id', db.Integer, db.ForeignKey('group.id')),
