@@ -25,12 +25,16 @@
     <!-- calculator will be inserted here -->
 
     <footer class="footer">
+      <!--Logout button-->
+      <p class="pull-left">
+         <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+      </p>
 
-    <p class="pull-right">
-      <button class="btn btn-success" id="saveresult">Save result</button>
-      <button class="btn btn-primary" id="loadresult">Load result</button>
-    </p>
-
+      <!--Save and load result buttons-->
+      <p class="pull-right">
+        <button class="btn btn-success" id="saveresult">Save result</button>
+        <button class="btn btn-primary" id="loadresult">Load result</button>
+      </p>
     </footer>
   </body>
 
