@@ -15,6 +15,7 @@
     <script src="{{ url_for('static', filename='scripts/dojotoolkit/dojo/dojo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/rechner-brutto-netto/index-web.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/jquery-2.1.4.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='scripts/bootstrap.min.js') }}" defer></script>
     <script>
       var user_id = '{{ user_id }}';
     </script>
@@ -32,10 +33,31 @@
 
       <!--Save and load result buttons-->
       <p class="pull-right">
-        <button class="btn btn-success" id="saveresult">Save result</button>
+        <button class="btn btn-success" data-toggle="modal" data-target="#saveFileModal">Save result</button>
         <button class="btn btn-primary" id="loadresult">Load result</button>
       </p>
     </footer>
+
+
+    <!--Modal for saving a file-->
+    <div class="modal fade" id="saveFileModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Specify a filename</h4>
+          </div>
+          <div class="modal-body">
+            <input type="text" class="form-control" placeholder="Filename e.g. calculator" id="filename">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveresult">Save result</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
   </body>
 
 </html>
