@@ -36,7 +36,7 @@ $( document ).ready(function() {
                 console.log("Result retrieved: " + data);
                 var json = JSON.parse(data);
                 $.each(json, function(i, item) {
-                    $("#listing").append('<div class="row"><div class="col-md-8 filename"><h2>'+json[i]+'</h2></div><div class="col-md-4 pull-right"><h2>X</h2></div></div>');
+                    $("#listing").append('<div class="row" id="file-row-'+json[i]+'"><div class="col-md-8 filename"><h2>'+json[i]+'</h2></div><div class="col-md-4 delete-file"><h2 onClick="deleteFile(\'' + json[i]+ '\')">X</h2></div></div>');
                 });
                 $('#listFilesModal').modal('show')
 
@@ -58,4 +58,23 @@ $( document ).ready(function() {
             }
         });*/
     });
+
+
 });
+
+
+function deleteFile(filename) {
+    $.ajax({
+        type: "DELETE",
+        contentType: "application/json; charset=utf-8",
+        url: "/storage/api/v1.0/"+user_id+"/"+filename,
+        success: function (response) {
+            if(response == "200"){
+                $('#file-row-'+filename).remove();
+            }
+        },
+        error: function (data) {
+            console.log("error in delete request");
+        }
+    });
+};
