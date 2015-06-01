@@ -36,8 +36,9 @@ $( document ).ready(function() {
                 console.log("Result retrieved: " + data);
                 var json = JSON.parse(data);
                 $.each(json, function(i, item) {
-                    alert(json[i]);
+                    $("#listing").append('<div class="row"><div class="col-md-8 filename"><h2>'+json[i]+'</h2></div><div class="col-md-4 pull-right"><h2>X</h2></div></div>');
                 });
+                $('#listFilesModal').modal('show')
 
             },
             error: function (data) {
