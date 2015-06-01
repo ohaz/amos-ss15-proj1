@@ -8,7 +8,7 @@ $( document ).ready(function() {
         var filename = $('#filename').val();
 
         //Check if filename is not empty
-        if(filename){
+        if(filename.length > 0){
             //Save result with the given filename
             $.ajax({
                 type: "POST",
@@ -35,14 +35,36 @@ $( document ).ready(function() {
             success: function (data) {
                 console.log("Result retrieved: " + data);
                 var json = JSON.parse(data);
+                $("#listing").html("");
                 $.each(json, function(i, item) {
-                    $("#listing").append('<div class="row" id="file-row-'+json[i]+'"><div class="col-md-8 filename"><h2 id="'+json[i]+'">'+json[i]+'</h2></div><div class="col-md-4 delete-file"><h2 id="delete'+json[i]+'" onClick="deleteFile(\'' + json[i]+ '\')">X</h2></div></div>');
+                    $("#listing").append('' +
+                    '<tr id="file-row-'+json[i]+'">' +
+                    '<td><h4>'+json[i]+'</h4></td> ' +
+                    '<td> <button type="button" id="delete'+json[i]+'" onClick="deleteFile(\'' + json[i]+ '\')" class="btn btn-danger">Delete</button> ' +
+                    '</td><td><button type="button" onClick="shareFile(\'' + json[i]+ '\')" class="btn btn-primary">Share</button></td>' +
+                    '</tr>');
                 });
+
                 $('#listFilesModal').modal('show')
 
             },
             error: function (data) {
                 console.log("error in get request");
+            }
+        });
+
+        $( "#share-file" ).click(function() {
+            //Get filename
+            var filename = currentShareFile;
+            var username = $('#share-file-username').val();
+            var permission = $('#share-file-permission').val();
+
+            //Check if filename is not empty
+            if(filename){
+                //Check if username is not empty
+                if(username){
+                    //TODO make ajax call to share file now
+                }
             }
         });
 
@@ -77,4 +99,11 @@ function deleteFile(filename) {
             console.log("error in delete request");
         }
     });
+};
+var currentShareFile;
+function shareFile(filename) {
+    currentShareFile = filename;
+    $('#listFilesModal').modal('hide');
+    $('#shareFileModal').modal('show');
+
 };
