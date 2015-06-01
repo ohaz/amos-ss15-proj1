@@ -36,7 +36,7 @@ $( document ).ready(function() {
                 console.log("Result retrieved: " + data);
                 var json = JSON.parse(data);
                 $.each(json, function(i, item) {
-                    $("#listing").append('<div class="row" id="file-row-'+json[i]+'"><div class="col-md-8 filename"><h2>'+json[i]+'</h2></div><div class="col-md-4 delete-file"><h2 onClick="deleteFile(\'' + json[i]+ '\')">X</h2></div></div>');
+                    $("#listing").append('<div class="row" id="file-row-'+json[i]+'"><div class="col-md-8 filename"><h2 id="'+json[i]+'">'+json[i]+'</h2></div><div class="col-md-4 delete-file"><h2 id="delete'+json[i]+'" onClick="deleteFile(\'' + json[i]+ '\')">X</h2></div></div>');
                 });
                 $('#listFilesModal').modal('show')
 
