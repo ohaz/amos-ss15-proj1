@@ -26,10 +26,26 @@ $( document ).ready(function() {
                 }
             });
         }
-
     });
     $( "#loadresult" ).click(function() {
         $.ajax({
+            type: "GET",
+            contentType: "application/json; charset=utf-8",
+            url: "/storage/api/v1.0/"+user_id,
+            success: function (data) {
+                console.log("Result retrieved: " + data);
+                var json = JSON.parse(data);
+                $.each(json, function(i, item) {
+                    alert(json[i]);
+                });
+
+            },
+            error: function (data) {
+                console.log("error in get request");
+            }
+        });
+
+        /*$.ajax({
             type: "GET",
             contentType: "application/json; charset=utf-8",
             url: "/storage/api/v1.0/"+user_id+"/calculator",
@@ -39,6 +55,6 @@ $( document ).ready(function() {
             error: function (data) {
                 console.log("error in get request");
             }
-        });
+        });*/
     });
 });

@@ -2,6 +2,7 @@
 Routes and views for the flask application.
 """
 import hashlib
+import json
 import uuid
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
@@ -213,7 +214,11 @@ REST API
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
 def rest_list_files(bucket_id):
     """ Lists files in container """
-    return None
+    data = storageinterface.list_files(bucket_id)
+    print(data)
+    json_string = json.dumps(data)
+    print(json_string)
+    return json_string
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
