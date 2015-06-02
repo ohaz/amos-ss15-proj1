@@ -40,9 +40,21 @@ $( document ).ready(function() {
                     $("#listing").append('' +
                     '<tr id="file-row-'+json[i]+'">' +
                     '<td><h4>'+json[i]+'</h4></td> ' +
+                    '<td><h4 id="result'+json[i]+'"></h4></td>'+
                     '<td> <button type="button" id="delete'+json[i]+'" onClick="deleteFile(\'' + json[i]+ '\')" class="btn btn-danger">Delete</button> ' +
                     '</td><td><button type="button" onClick="shareFile(\'' + json[i]+ '\')" class="btn btn-primary">Share</button></td>' +
                     '</tr>');
+                    $.ajax({
+                        type: "GET",
+                        contentType: "application/json; charset=utf-8",
+                        url: "/storage/api/v1.0/"+user_id+"/"+json[i],
+                        success: function (data) {
+                            $("#result"+json[i]).html(data);
+                        },
+                        error: function (data) {
+                            console.log("error in get request");
+                        }
+                    });
                 });
 
                 $('#listFilesModal').modal('show')
