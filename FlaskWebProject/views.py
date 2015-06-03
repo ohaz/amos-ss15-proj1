@@ -259,8 +259,8 @@ def rest_upload_from_text(bucket_id, file_id):
         if user is None:
             return "403"  # Forbidden
         useruserfile = UserUserfile(Userfile(bucket_id, file_id), user, 6)
-        db.session.add(useruserfile)
-        db.session.commit()
+        dbSession.add(useruserfile)
+        dbSession.commit()
 
     # if file exists -> check if file_id, user_id is found with right permission in UserUserfiles
     else:
@@ -306,6 +306,6 @@ def rest_set_permission(bucket_id, file_id, user_id, permission):
         return "404"  # Not found
     # 4. set permission in table UserUserfile
     useruserfile = UserUserfile(userfile, user, permission)
-    db.session.add(useruserfile)
-    db.session.commit()
+    dbSession.add(useruserfile)
+    dbSession.commit()
     return None
