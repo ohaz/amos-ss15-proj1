@@ -6,6 +6,10 @@ Base = declarative_base()
 
 
 class User(Base):
+    # create with:
+    # User("hanz","hanzmail","hanzpw","sso")
+    # get with:
+    # usr = session.query(User).filter(User.id==1).first()
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(64), index=True, unique=True)
@@ -45,7 +49,7 @@ class UserUserfile(Base):
     # create with:
     # UserUserfile(Userfile("folder","file"), user, permission=7)
     # check with:
-    # session.query(UserUserfile).filter(UserUserfile.user_id==1,UserUserfile.userfile_id==2).first().permission
+    # uufile = session.query(UserUserfile).filter(UserUserfile.user_id==1,UserUserfile.userfile_id==2).first().permission
     __tablename__ = 'user_userfile'
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
     userfile_id = db.Column(db.Integer, db.ForeignKey('userfile.id'), primary_key=True)
@@ -67,6 +71,10 @@ class UserUserfile(Base):
 
 
 class Userfile(Base):
+    # create with:
+    # Userfile("hanzfolder","hanzfile")
+    # get with:
+    # file = session.query(Userfile).filter(Userfile.id==1).first()
     __tablename__ = 'userfile'
     id = db.Column(db.Integer, primary_key=True)
     folder = db.Column('folder', db.String(64))
@@ -84,6 +92,7 @@ class Userfile(Base):
 
     def __repr__(self):
         return '<Userfile %r>' % (self.name)
+
 
 """
 User -> Group -> File Mapping:

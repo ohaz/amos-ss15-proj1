@@ -5,11 +5,14 @@ The flask application package.
 from flask import Flask
 from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 from flask_oauthlib.client import OAuth
 from config import sso_fb_consumer_key
 from config import sso_fb_consumer_secret
 from config import sso_google_consumer_key
 from config import sso_google_consumer_secret
+from config import SQLALCHEMY_DATABASE_URI
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -18,6 +21,11 @@ lm = LoginManager()
 lm.init_app(app)
 lm.login_view = 'login'
 oauth = OAuth()
+
+# session for connection to database
+dbEngine = create_engine(SQLALCHEMY_DATABASE_URI)
+Session = sessionmaker(bind=dbEngine)
+dbSession = Session()  # check if it is good to create the session with init
 
 # Facebook OAuth2 Login Credentials
 facebook = oauth.remote_app(

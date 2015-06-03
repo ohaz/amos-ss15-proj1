@@ -5,7 +5,7 @@ import hashlib
 import uuid
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
-from FlaskWebProject import app, db, lm, facebook, google
+from FlaskWebProject import app, db, lm, facebook, google, dbSession
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from werkzeug.routing import BaseConverter
 import os
@@ -31,7 +31,7 @@ app.url_map.converters['regex'] = RegexConverter
 # Function for LoginManager to get a user with specific id
 @lm.user_loader
 def load_user(id):
-    user = User.query.get(int(id))
+    user = dbSession.query(User).filter(User.id == int(id)).first()
     if user:
         return user
 
@@ -60,8 +60,7 @@ def login():
     form = LoginForm(request.form)
     if request.method == 'POST':
         if form.validate_on_submit():
-            user = User.query.filter_by(
-                username=request.form['username']).first()
+            user = dbSession.query(User).filter(User.username == request.form['username']).first()
             if user is not None and user.sso == "none":
                 password, salt = user.password.split(':')
                 if password == hashlib.sha256(salt.encode() + request.form['password'].encode()).hexdigest():
@@ -85,8 +84,8 @@ def register():
         # generate randomness
         salt = uuid.uuid4().hex
         # hashing password
-        user = User.query.filter_by(username=request.form['username']).first()
-        email = User.query.filter_by(email=request.form['email']).first()
+        user = dbSession.query(User).filter(User.username == request.form['username']).first()
+        email = dbSession.query(User).filter(User.email == request.form['email']).first()
         if user is None and email is None:
             password = hashlib.sha256(
                 salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
@@ -149,9 +148,7 @@ def facebook_authorized(resp):
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = facebook.get('/me').data
-    user = User.query.filter(User.email == user_data['email']).first()
-    # TODO: Security Issue, Disable Login from different SSO's with same mail
-    # to same user
+    user = dbSession.query(User).filter(User.email == request.form['email']).first()
     if user is None:
         new_user = User(email=user_data['email'], username=user_data[
                         'id'], password=" ", sso="facebook")
@@ -191,9 +188,7 @@ def google_authorized(resp):
         return redirect(next_url)
     session['oauth_token'] = (resp['access_token'], '')
     user_data = google.get('/userinfo/v2/me').data
-    user = User.query.filter(User.email == user_data['email']).first()
-    # TODO: Security Issue, Disable Login from different SSO's with same mail
-    # to same user
+    user = dbSession.query(User).filter(User.email == request.form['email']).first()
     if user is None:
         new_user = User(
             email=user_data['email'], username=user_data['id'], password=" ", sso="google")
