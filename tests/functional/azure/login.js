@@ -13,11 +13,11 @@ define([
                 // login
                 .findById('username')
                     .click()
-                    .type('amostest')
+                    .type('test11')
                     .end()
                 .findById('password')
                     .click()
-                    .type('amostest')
+                    .type('password')
                     .pressKeys('\uE007') // enter key
                     .end();
         },

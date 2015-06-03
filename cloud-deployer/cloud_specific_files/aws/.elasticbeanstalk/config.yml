@@ -5,6 +5,6 @@ global:
   application_name: rechner-flask
   default_ec2_keyname: null
   default_platform: 64bit Amazon Linux 2015.03 v1.3.1 running Python 2.7
-  default_region: null
+  default_region: us-west-2
   profile: null
   sc: null

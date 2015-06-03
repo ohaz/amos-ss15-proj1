@@ -11,10 +11,12 @@ import ntpath
 #
 s3_conn = S3Connection(AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET)
 
+
 #
 # Create a new container for files
 # Overwrite existing bucket with the same name in own namespace
 #
+
 def create_container(bucket):
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
@@ -29,21 +31,25 @@ def create_container(bucket):
         print "bucket successfully created..."
     return ret_val
 
+
 #
 # CHECK FUNCTIONS
 #
+
 def container_exists(bucket):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     return bucketname in [x.name for x in s3_conn.get_all_buckets()]
 
-# return a list with the names of all files in the bucket 
+
+# return a list with the names of all files in the bucket
 def list_files(bucket):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
-    bucket_files = [x.name for x in bucket_content]    
+    bucket_files = [x.name for x in bucket_content]
     return bucket_files
+
 
 def file_exists(bucket, filename):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
@@ -54,6 +60,7 @@ def file_exists(bucket, filename):
         return True
     else:
         return False
+
 
 def file_change_permissions(bucket, filename, permission):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
@@ -80,6 +87,8 @@ def upload_from_text(bucket, filename, text):
 # upload a file from specific path into a bucket
 # before uploading the data, it will be checked if the file exists
 # if the file exists the upload will fail
+
+
 def upload_from_path(bucket, path):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
@@ -111,6 +120,7 @@ def download_file_to_path(bucket, filename, path):
     else:
         return False
 
+
 # get the download link from specific file
 # it`s only accessable when the permissons are set to public.
 # default permissions are only to the user not public
@@ -124,6 +134,7 @@ def get_download_url(bucket, filename):
         return file_url
     else:
         return None
+
 
 def download_file_to_text(bucket, filename):
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
@@ -166,7 +177,8 @@ def delete_container(bucket):
         bucket_content = s3_conn.get_bucket(bucketname)
     except S3ResponseError:
         return True
-    # Container must be empty before it can be delete --> delete all containing files
+    # Container must be empty before it can be delete --> delete all
+    # containing files
     for key in bucket_content.list():
         key.delete()
     s3_conn.delete_bucket(bucketname)
