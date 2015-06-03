@@ -97,8 +97,8 @@ def register():
             )
 
             # save new user in database
-            db.session.add(user)
-            db.session.commit()
+            dbSession.add(user)
+            dbSession.commit()
 
             # create container/bucket for the new registered user
             storageinterface.create_container(user.get_id())
@@ -152,8 +152,8 @@ def facebook_authorized(resp):
     if user is None:
         new_user = User(email=user_data['email'], username=user_data[
                         'id'], password=" ", sso="facebook")
-        db.session.add(new_user)
-        db.session.commit()
+        dbSession.add(new_user)
+        dbSession.commit()
         login_user(new_user)
     else:
         login_user(user)
@@ -192,8 +192,8 @@ def google_authorized(resp):
     if user is None:
         new_user = User(
             email=user_data['email'], username=user_data['id'], password=" ", sso="google")
-        db.session.add(new_user)
-        db.session.commit()
+        dbSession.add(new_user)
+        dbSession.commit()
         login_user(new_user)
     else:
         login_user(user)
