@@ -10,7 +10,7 @@ from flask.ext.login import login_user, logout_user, current_user, login_require
 from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
-from .models import User
+from .models import User, Userfile, UserUserfile
 from FlaskWebProject import storageinterface
 
 # Global constants
@@ -214,18 +214,60 @@ def rest_list_files(bucket_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
+    # 1. check if logged in user is owner of bucket
+    if g.user is not None and g.user.is_authenticated():
+        return "401"  # Unauthorized
+    if g.user.get_id() != bucket_id:
+        return "403"  # Forbidden
+    # TODO: all files in bucket must be deleted in db
     return storageinterface.delete_container(bucket_id)
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['GET'])
 def rest_download_file_to_text(bucket_id, file_id):
     """ Returns specified file in container as text """
+    if g.user is not None and g.user.is_authenticated():
+        return "401"  # Unauthorized
+    if g.user.get_id() != bucket_id:
+        return "403"  # Forbidden
+    # 2. check if file in table Userfile exists
+    userfile = dbSession.query(Userfile).filter(Userfile.name == file_id).first()
+    if userfile is None:
+        return "404"  # Not found
+    # 3. check if user_id in table User exists
+    user = dbSession.query(User).filter(User.username == bucket_id).first()
+    if user is None:
+        return "404"  # Not found
+    useruserfile = session.query(UserUserfile).filter(UserUserfile.user_id == user.id, UserUserfile.userfile_id == userfile.id).first()
+    if useruserfile is None or useruserfile.permission < 4:
+        return "403"  # No permission found or permission not sufficient
     return storageinterface.download_file_to_text(bucket_id, file_id)
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>', methods=['POST'])
 def rest_upload_from_text(bucket_id, file_id):
     """ Uploads text to new file in container """
+    if g.user is not None and g.user.is_authenticated():
+        return "401"  # Unauthorized
+    if g.user.get_id() != bucket_id:
+        return "403"  # Forbidden
+
+    # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
+    userfile = dbSession.query(Userfile).filter(Userfile.name == file_id).first()
+    user = dbSession.query(User).filter(User.username == bucket_id).first()
+    if userfile is None:
+        if user is None:
+            return "403"  # Forbidden
+        useruserfile = UserUserfile(Userfile(bucket_id, file_id), user, 6)
+        db.session.add(useruserfile)
+        db.session.commit()
+
+    # if file exists -> check if file_id, user_id is found with right permission in UserUserfiles
+    else:
+        useruserfile = session.query(UserUserfile).filter(UserUserfile.user_id == user.id, UserUserfile.userfile_id == userfile.id).first()
+        if useruserfile is None or useruserfile.permission < 6:
+            return redirect(url_for('403'))  # No permission found or permission not sufficient
+
     content = request.json['content']
     response = "200"
     if not storageinterface.upload_from_text(bucket_id, file_id, content):
@@ -243,4 +285,27 @@ def rest_overwrite_file_from_text(bucket_id, file_id):
 def rest_delete_file(bucket_id, file_id):
     """ Deletes file in container """
     # storageinterface.delete_file(bucket_id, file_id)
+    return None
+
+
+@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_id>/<string:user_id>/<int:permission>', methods=['PUT'])
+def rest_set_permission(bucket_id, file_id, user_id, permission):
+    """ Sets permission for file in db """
+    # 1. check if logged in user is owner of file_id
+    if g.user is not None and g.user.is_authenticated():
+        return "401"  # Unauthorized TODO: check if redirect is correct response!
+    if g.user.get_id() != bucket_id:
+        return "403"  # Forbidden
+    # 2. check if file in table Userfile exists
+    userfile = dbSession.query(Userfile).filter(Userfile.name == file_id).first()
+    if userfile is None:
+        return "404"  # Not found
+    # 3. check if user_id in table User exists
+    user = dbSession.query(User).filter(User.username == bucket_id).first()
+    if user is None:
+        return "404"  # Not found
+    # 4. set permission in table UserUserfile
+    useruserfile = UserUserfile(userfile, user, permission)
+    db.session.add(useruserfile)
+    db.session.commit()
     return None
