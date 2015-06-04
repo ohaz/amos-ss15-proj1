@@ -75,7 +75,24 @@ $( document ).ready(function() {
             if(filename){
                 //Check if username is not empty
                 if(username){
-                    //TODO make ajax call to share file now
+                    //Make ajax call to share-file rest API
+                    //Hands over username, filename and permission value
+                    $.ajax({
+                        type: "POST",
+                        data: JSON.stringify({username: username, permission: permission}),
+                        contentType: "application/json; charset=utf-8",
+                        url: "/storage/api/v1.0/share/"+user_id+"/"+filename,
+                        success: function (response) {
+                            if(response == "200"){
+                                //Hide modal after successfully saving the result
+                                $('#shareFileModal').modal('hide')
+                            }
+                        },
+                        error: function (data) {
+                            console.log("error in post request");
+                        }
+                    });
+
                 }
             }
         });
@@ -117,5 +134,4 @@ function shareFile(filename) {
     currentShareFile = filename;
     $('#listFilesModal').modal('hide');
     $('#shareFileModal').modal('show');
-
 };
