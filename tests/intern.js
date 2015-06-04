@@ -68,17 +68,17 @@ define({
 		'tests/functional/azure/login',
 		'tests/functional/azure/index-web',
 		'tests/functional/azure/index-web_rev',
-		'tests/functional/azure/index-web-comparison',
+		'tests/functional/azure/index-file-management',
 		'tests/functional/connect-to-google',
 		'tests/functional/google/login',
 		'tests/functional/google/index-web',
 		'tests/functional/google/index-web_rev',
-		'tests/functional/google/index-web-comparison',
+		'tests/functional/google/index-file-management',
 		'tests/functional/connect-to-aws',
 		'tests/functional/aws/login',
 		'tests/functional/aws/index-web',
 		'tests/functional/aws/index-web_rev',
-		'tests/functional/aws/index-web-comparison'
+		'tests/functional/aws/index-file-management'
 	],
 
 	// A regular expression matching URLs to files that should not be included in code coverage analysis

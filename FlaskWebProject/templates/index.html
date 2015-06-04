@@ -15,6 +15,7 @@
     <script src="{{ url_for('static', filename='scripts/dojotoolkit/dojo/dojo.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/rechner-brutto-netto/index-web.js') }}" defer></script>
     <script src="{{ url_for('static', filename='scripts/jquery-2.1.4.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='scripts/bootstrap.min.js') }}" defer></script>
     <script>
       var user_id = '{{ user_id }}';
     </script>
@@ -25,13 +26,98 @@
     <!-- calculator will be inserted here -->
 
     <footer class="footer">
+      <!--Logout button-->
+      <p class="pull-left">
+         <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+      </p>
 
-    <p class="pull-right">
-      <button class="btn btn-success" id="saveresult">Save result</button>
-      <button class="btn btn-primary" id="loadresult">Load result</button>
-    </p>
-
+      <!--Save and load result buttons-->
+      <p class="pull-right">
+        <button class="btn btn-success" data-toggle="modal" data-target="#saveFileModal" id="saveFile">Save result</button>
+        <button class="btn btn-primary" id="loadresult">Load result</button>
+      </p>
     </footer>
+
+
+    <!--Modal for saving a file-->
+    <div class="modal fade" id="saveFileModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Save result</h4>
+          </div>
+          <div class="modal-body">
+            <h5>Speciffy a filename</h5>
+            <input type="text" class="form-control" placeholder="Filename e.g. calculator" id="filename">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" id="saveresult">Save result</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div><!-- /.modal -->
+
+
+    <!--Modal for listing all files retrieved from server-->
+        <div class="modal fade" id="listFilesModal">
+          <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">Your files</h4>
+              </div>
+              <div class="modal-body" >
+                <table class="table">
+                  <thead>
+                  <tr>
+                      <th class="col-md-4">Filename</th>
+                      <th class="col-md-2">Result</th>
+                      <th class="col-md-2">Delete</th>
+                      <th class="col-md-2">Share</th>
+                  </tr>
+                  </thead>
+                  <tbody id="listing">
+
+                  </tbody>
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button id="close-list-files-modal" type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+              </div>
+            </div><!-- /.modal-content -->
+          </div><!-- /.modal-dialog -->
+        </div><!-- /.modal -->
+
+    <!--Modal for listing all files retrieved from server-->
+            <div class="modal fade" id="shareFileModal">
+              <div class="modal-dialog">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title">Share file</h4>
+                  </div>
+                  <div class="modal-body" >
+                    <h5>With whom would you like to share this file?</h5>
+                    <input type="text" class="form-control" placeholder="Username" id="share-file-username">
+                    <br>
+                    <h5>Select a permission value</h5>
+                    <select id="share-file-permission" class="form-control">
+                        <option value="0">0</option>
+                        <option value="2">2</option>
+                        <option value="4">4</option>
+                        <option value="6">6</option>
+                    </select>
+                  </div>
+                  <div class="modal-footer">
+                    <button id="close-list-files-modal" type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="share-file">Share</button>
+                  </div>
+                </div><!-- /.modal-content -->
+              </div><!-- /.modal-dialog -->
+            </div><!-- /.modal -->
+
   </body>
 
 </html>
