@@ -283,14 +283,6 @@ def rest_upload_from_text(bucket_id, file_name):
         response = "500"
     return response
 
-@app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_id>', methods=['POST'])
-def rest_share_file(bucket_id, file_id):
-    """ Share a file for another user """
-    username = request.json['username']
-    permission = request.json['permission']
-    print(username + " " + file_id + " " + permission)
-    response = "200"
-    return response
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
 def rest_overwrite_file_from_text(bucket_id, file_name):
@@ -305,24 +297,42 @@ def rest_delete_file(bucket_id, file_name):
     return None
 
 
-@app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>/<string:user_id>/<int:permission>', methods=['PUT'])
-def rest_set_permission(bucket_id, file_name, user_id, permission):
+@app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_name>', methods=['POST'])
+def rest_share_file(bucket_id, file_name):
     """ Sets permission for file in db """
+    username = request.json['username']
+    permission = request.json['permission']
+    print(username + " " + file_name + " " + permission)
     # 1. check if logged in user is owner of file_name
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized TODO: check if redirect is correct response!
-    if g.user.get_id() != bucket_id:
+    if g.user.get_id() != str(bucket_id):
         return "403"  # Forbidden
+    print "check userfile"
     # 2. check if file in table Userfile exists
     userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
     if userfile is None:
         return "404"  # Not found
     # 3. check if user_id in table User exists
-    user = dbSession.query(User).filter(User.id == bucket_id).first()
+    print "check user"
+    user = dbSession.query(User).filter(User.username == username).first()
     if user is None:
         return "404"  # Not found
-    # 4. set permission in table UserUserfile
-    useruserfile = UserUserfile(userfile, user, permission)
-    dbSession.add(useruserfile)
-    dbSession.commit()
-    return None
+    # 4. check if permission allready exists in table UserUserfile
+    useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id, UserUserfile.userfile_id == userfile.id).first()
+    if useruserfile is not None:
+        if useruserfile.permission >= permission:
+            # TODO: edit existing permission in table
+            print "TODO: views.py: rest_share_file: alter existing permission"
+            return "200"
+        else:
+            # TODO: edit existing permission in table
+            print "TODO: views.py: rest_share_file: alter existing permission"
+            return "200"
+    else:
+        # 5. set permission in table UserUserfile
+        print "set useruserfile"
+        useruserfile = UserUserfile(userfile, user, permission)
+        dbSession.add(useruserfile)
+        dbSession.commit()
+    return "200"
