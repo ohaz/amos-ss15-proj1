@@ -283,6 +283,14 @@ def rest_upload_from_text(bucket_id, file_name):
         response = "500"
     return response
 
+@app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_id>', methods=['POST'])
+def rest_share_file(bucket_id, file_id):
+    """ Share a file for another user """
+    username = request.json['username']
+    permission = request.json['permission']
+    print(username + " " + file_id + " " + permission)
+    response = "200"
+    return response
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
 def rest_overwrite_file_from_text(bucket_id, file_name):
