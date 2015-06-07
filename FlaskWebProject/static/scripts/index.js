@@ -31,25 +31,26 @@ $( document ).ready(function() {
         $.ajax({
             type: "GET",
             contentType: "application/json; charset=utf-8",
-            url: "/storage/api/v1.0/"+user_id,
+            url: "/storage/api/v1.0/share",
             success: function (data) {
                 console.log("Result retrieved: " + data);
                 var json = JSON.parse(data);
                 $("#listing").html("");
                 $.each(json, function(i, item) {
                     $("#listing").append('' +
-                    '<tr id="file-row-'+json[i]+'">' +
-                    '<td><h4>'+json[i]+'</h4></td> ' +
-                    '<td><h4 id="result'+json[i]+'"></h4></td>'+
-                    '<td> <button type="button" id="delete'+json[i]+'" onClick="deleteFile(\'' + json[i]+ '\')" class="btn btn-danger">Delete</button> ' +
-                    '</td><td><button type="button" onClick="shareFile(\'' + json[i]+ '\')" class="btn btn-primary">Share</button></td>' +
+                    '<tr id="file-row-'+json[i][0]+'-'+json[i][1]+'">' +
+                    '<td><h4>'+json[i][0]+'</h4></td> ' +
+                    '<td><h4>'+json[i][1]+'</h4></td> ' +
+                    '<td><h4 id="result'+json[i][1]+'"></h4></td>'+
+                    '<td> <button type="button" id="delete'+json[i][1]+'" onClick="deleteFile(\'' + json[i][1]+ '\')" class="btn btn-danger">Delete</button> ' +
+                    '</td><td><button type="button" onClick="shareFile(\'' + json[i][1]+ '\')" class="btn btn-primary">Share</button></td>' +
                     '</tr>');
                     $.ajax({
                         type: "GET",
                         contentType: "application/json; charset=utf-8",
-                        url: "/storage/api/v1.0/"+user_id+"/"+json[i],
+                        url: "/storage/api/v1.0/"+json[i][2]+"/"+json[i][1],
                         success: function (data) {
-                            $("#result"+json[i]).html(data);
+                            $("#result"+json[i][1]).html(data);
                         },
                         error: function (data) {
                             console.log("error in get request");
