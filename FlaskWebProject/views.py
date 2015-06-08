@@ -18,9 +18,6 @@ from FlaskWebProject import storageinterface
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC = os.path.join(APP_ROOT, 'static')
 
-# if connection to dbSession is busy/broken etc. try at least so often
-RETRY_dbSession = 3
-
 # Regex Handling for URLs
 class RegexConverter(BaseConverter):
 
@@ -34,16 +31,21 @@ app.url_map.converters['regex'] = RegexConverter
 # Function for LoginManager to get a user with specific id
 @lm.user_loader
 def load_user(id):
-    try:
-        user = dbSession.query(User).filter(User.id == int(id)).first()
-        if user:
-            return user
-    except :
-        return None
+    user = dbSession.query(User).filter(User.id == int(id)).first()
+    if not user is None:
+        return user
+    return None
 
 @app.before_request
 def before_request():
     g.user = current_user
+
+
+## If Request is finished/exception was raised, 
+## at least do this
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    dbSession.remove()
 
 
 @app.route('/')
@@ -209,26 +211,25 @@ def google_authorized(resp):
 REST API
 '''
 
-# XXX TESTED - HAND
+
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
 def rest_list_files(bucket_id):
     """ Lists files in container """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
-    #gets every file of g.user FIXME HACK
+    
+    #gets every file of g.user
     files = dbSession.query(Userfile.name).filter(Userfile.folder == g.user.get_id()).order_by(Userfile.name)
 
     data = []
     for _iter_ in files:
         data.append(_iter_[0])
-    #Old way of getting the files, more correct one?
-    # data = storageinterface.list_files(bucket_id) 
-    # print(data)
+    
     json_string = json.dumps(data)
-    print(json_string)
+    #print(json_string)
     return json_string
 
-# 
+
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
@@ -238,7 +239,6 @@ def rest_delete_container(bucket_id):
     if g.user.get_id() != str(bucket_id):
         return "403"  # Forbidden
     # ATT: all files in bucket must be deleted in db # can be replaced via bulkrequest, but this needs more attention, because errors are made easily and db could be out of synch [foreign keys and so on]!
-    # STILL BREAKS
     files_in_bucket = dbSession.query(Userfile).filter(Userfile.folder == bucket_id)
     for content in files_in_bucket:
         connectors = dbSession.query(UserUserfile).filter(UserUserfile.userfile_id == content.id)
@@ -256,15 +256,7 @@ def rest_download_file_to_text(bucket_id, file_name):
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
-    # 2. get files, for which the user has permissions, filtered with right bucket and filename 
-    for k in range(0,RETRY_dbSession): #retries if connection busy or broken HACK
-        try:
-            userfile = dbSession.query(UserUserfile,Userfile).filter(UserUserfile.userfile_id == Userfile.id, Userfile.name == file_name, UserUserfile.user_id == g.user.get_id(),Userfile.folder == bucket_id).first()
-            break
-        except :
-            pass
-    else:
-        return "500" #we are sorry, we at least tried...
+    userfile = dbSession.query(UserUserfile,Userfile).filter(UserUserfile.userfile_id == Userfile.id, Userfile.name == file_name, UserUserfile.user_id == g.user.get_id(),Userfile.folder == bucket_id).first()
 
     if userfile is None:
        return "404"  # Not found
@@ -272,7 +264,12 @@ def rest_download_file_to_text(bucket_id, file_name):
     print(str(userfile.UserUserfile.permission) + " " + str(userfile.Userfile.name))
     if userfile.UserUserfile.permission < 4 :
         return "304"
-    return storageinterface.download_file_to_text(bucket_id, file_name)
+    
+    value = storageinterface.download_file_to_text(bucket_id, file_name)
+    if value is None: # FIXME wat do in this case?
+        print('Database out of synch with storage!')
+        return "404"
+    return value
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['POST'])
