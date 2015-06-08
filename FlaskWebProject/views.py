@@ -8,6 +8,7 @@ import uuid
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
 from FlaskWebProject import app, db, lm, facebook, google, dbSession
 from flask.ext.login import login_user, logout_user, current_user, login_required
+from sqlalchemy import or_
 from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
@@ -32,9 +33,8 @@ app.url_map.converters['regex'] = RegexConverter
 @lm.user_loader
 def load_user(id):
     user = dbSession.query(User).filter(User.id == int(id)).first()
-    if not user is None:
-        return user
-    return None
+    return user
+
 
 @app.before_request
 def before_request():
@@ -218,6 +218,9 @@ def rest_list_files(bucket_id):
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
+    if int(g.user.get_id()) != bucket_id :
+        return "403"
+
     #gets every file of g.user
     files = dbSession.query(Userfile.name).filter(Userfile.folder == g.user.get_id()).order_by(Userfile.name)
 
@@ -236,15 +239,18 @@ def rest_delete_container(bucket_id):
     # 1. check if logged in user is owner of bucket
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
-    if g.user.get_id() != str(bucket_id):
+    if int(g.user.get_id()) != bucket_id:
         return "403"  # Forbidden
     # ATT: all files in bucket must be deleted in db # can be replaced via bulkrequest, but this needs more attention, because errors are made easily and db could be out of synch [foreign keys and so on]!
+
     files_in_bucket = dbSession.query(Userfile).filter(Userfile.folder == bucket_id)
     for content in files_in_bucket:
         connectors = dbSession.query(UserUserfile).filter(UserUserfile.userfile_id == content.id)
         for connect in connectors :
             dbSession.delete(connect)
         dbSession.delete(content)
+    user = dbSession.query(User).filter(User.id == bucket_id).first()
+    dbSession.delete(user)
     dbSession.commit()
     return storageinterface.delete_container(bucket_id)
 
@@ -261,9 +267,8 @@ def rest_download_file_to_text(bucket_id, file_name):
     if userfile is None:
        return "404"  # Not found
     
-    print(str(userfile.UserUserfile.permission) + " " + str(userfile.Userfile.name))
-    if userfile.UserUserfile.permission < 4 :
-        return "304"
+    if int(userfile.UserUserfile.permission) < 4 :
+        return "403"
     
     value = storageinterface.download_file_to_text(bucket_id, file_name)
     if value is None: # FIXME wat do in this case?
@@ -275,12 +280,8 @@ def rest_download_file_to_text(bucket_id, file_name):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['POST'])
 def rest_upload_from_text(bucket_id, file_name):
     """ Uploads text to new file in container """
-
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
-
-    if g.user.get_id() != str(bucket_id):
-        return "403"  # Forbidden
 
     # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
     userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
@@ -298,7 +299,7 @@ def rest_upload_from_text(bucket_id, file_name):
     else:
         useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id, UserUserfile.userfile_id == userfile.id).first()
         if useruserfile is None or useruserfile.permission < 6:
-            return redirect(url_for('403'))  # No permission found or permission not sufficient
+            return '403' #redirect(url_for('403'))  # No permission found or permission not sufficient
 
     content = request.json['content']
     response = "200"
@@ -310,7 +311,30 @@ def rest_upload_from_text(bucket_id, file_name):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
 def rest_overwrite_file_from_text(bucket_id, file_name):
     """ Uploads text to file in container """
-    return None
+    
+    # 1 check auth.
+    if g.user is None or not g.user.is_authenticated():
+        return "401"  # Unauthorized
+     
+    # 2 check if this file really exists
+    element = dbSession.query(Userfile).filter((Userfile.folder == bucket_id),(Userfile.name == file_name)).first()
+    if element is None:
+        return "404"
+    print(element.name)
+    
+    # 3 get this file again, just to check with right permissions
+    file_ = dbSession.query(UserUserfile,Userfile).filter(UserUserfile.userfile_id == Userfile.id, UserUserfile.user_id == g.user.get_id(), or_(UserUserfile.permission == 2,UserUserfile.permission == 6) , Userfile.folder == bucket_id, Userfile.name == file_name).first()
+    if file_ is None:
+        return '403' #because file exists, this means user has no right to manipulate
+    print(file_.Userfile.name)
+    
+    # 4 send new element
+    content = request.json['content']
+    response = "200"
+    if not storageinterface.upload_from_text(bucket_id, file_name, content):
+        response = "500"
+    print(response)
+    return response
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['DELETE'])
@@ -321,16 +345,18 @@ def rest_delete_file(bucket_id, file_name):
         return "401"  # Unauthorized
     
     # 2 only owner is allowed to delete
-    if g.user.get_id() != str(bucket_id) :
+    if int(g.user.get_id()) != bucket_id :
         return "403"
     
     # 3 check if this combination really exists
-    elements = dbSession.query(Userfile).filter((Userfile.folder == bucket_id) and (Userfile.name == file_name)).first()
+    elements = dbSession.query(Userfile).filter((Userfile.folder == bucket_id),(Userfile.name == file_name)).first()
     if elements == None :
         return "404"
     
-    # 4 try a delete-atempt
-    if storageinterface.delete_file(bucket_id, file_name):
+    # 4 try a delete-atempt 
+    # ATT [here an exception can lead to desynchronized states]
+    if storageinterface.file_exists(bucket_id, file_name):
+        storageinterface.delete_file(bucket_id, file_name)
         #no cascade possible, therfore we must remove the foreign-key there manually
         references = dbSession.query(UserUserfile).filter(UserUserfile.userfile_id == elements.id)
         for ref in  references :
@@ -342,16 +368,16 @@ def rest_delete_file(bucket_id, file_name):
 
 
 # Get Shared files, with at least read-permission, includeing username and id
-@app.route('/storage/api/v1.0/share/', methods=['GET'])
-def rest_share_list_files():
+@app.route('/storage/api/v1.0/share/read', methods=['GET'])
+def rest_share_list_files_read():
     """ Lists files with permission >0 """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
-    #1: gets every file with permission > 0 for g.user
+    #1: gets every file with permission > 4 for g.user
         # Sample-SQL-command
         # SELECT user.username, user_userfile.permission,userfile.id,userfile.folder,userfile.name FROM user_userfile,userfile JOIN user ON user.id = userfile.folder WHERE user_userfile.userfile_id = userfile.id AND user_userfile.user_id = g.user.get_id() ;
-    files = dbSession.query(UserUserfile,Userfile,User).filter(User.id == Userfile.folder, UserUserfile.userfile_id == Userfile.id, UserUserfile.user_id == g.user.get_id())
+    files = dbSession.query(UserUserfile,Userfile,User).filter(User.id == Userfile.folder, UserUserfile.userfile_id == Userfile.id, UserUserfile.user_id == g.user.get_id(), UserUserfile.permission >= 4 )
     
     #2 create json with data
     data = []
@@ -359,6 +385,26 @@ def rest_share_list_files():
         data.append([_iter_.User.username,_iter_.Userfile.name,_iter_.User.id])
     json_string = json.dumps(data)
     return json_string
+
+# Get Shared files, with at least write-permission, includeing username and id
+@app.route('/storage/api/v1.0/share/write', methods=['GET'])
+def rest_share_list_files_write():
+    """ Lists files with permission == 2 or 6"""
+    if g.user is None or not g.user.is_authenticated():
+        return "401"  # Unauthorized
+    
+    #1: gets every file with permission > 4 for g.user
+        # Sample-SQL-command
+        # SELECT user.username, user_userfile.permission,userfile.id,userfile.folder,userfile.name FROM user_userfile,userfile JOIN user ON user.id = userfile.folder WHERE user_userfile.userfile_id = userfile.id AND user_userfile.user_id = g.user.get_id() ;
+    files = dbSession.query(UserUserfile,Userfile,User).filter(User.id == Userfile.folder, UserUserfile.userfile_id == Userfile.id, UserUserfile.user_id == g.user.get_id(), or_(UserUserfile.permission == 6 ,UserUserfile.permission == 2 ))
+    
+    #2 create json with data
+    data = []
+    for _iter_ in files:
+        data.append([_iter_.User.username,_iter_.Userfile.name,_iter_.User.id])
+    json_string = json.dumps(data)
+    return json_string
+
 
 
 @app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_name>', methods=['POST'])
@@ -372,11 +418,11 @@ def rest_share_file(bucket_id, file_name):
         return "401"  # Unauthorized
     
     # 2. check if Owner of bucket is changing permissions
-    if g.user.get_id() != str(bucket_id):
+    if int(g.user.get_id()) != bucket_id:
         return "403"  # Forbidden
 
     # 3. check if file in table Userfile exists
-    userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
+    userfile = dbSession.query(Userfile).filter(Userfile.folder == bucket_id ,Userfile.name == file_name).first()
     if userfile is None:
         return "404"  # Not found
     
