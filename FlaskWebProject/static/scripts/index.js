@@ -67,6 +67,7 @@ $( document ).ready(function() {
                     '<td><h4>'+json[i][0]+'</h4></td> ' +
                     '<td><h4>'+json[i][1]+'</h4></td> ' +
                     '<td><h4 id="result'+json[i][1]+'"></h4></td>'+
+                    '<td><button type="button" id="load'+json[i]+'" onClick="loadFile(\'' + json[i][1]+ '\')" class="btn btn-danger">Load</button></td>'+
                     '<td> <button type="button" id="delete'+json[i][1]+'" onClick="deleteFile(\'' + json[i][2] +'\',\''+ json[i][1]+'\',\''+ json[i][0]+ '\')" class="btn btn-danger">Delete</button> ' +
                     '</td><td><button type="button" onClick="shareFile(\'' + json[i][1]+ '\')" class="btn btn-primary">Share</button></td>' +
                     '</tr>');
@@ -184,6 +185,14 @@ function deleteFile(filename) {
         }
     });
 };
+
+function loadFile(filename) {
+    var input = $('#shared_widgets_NumberInput_2');
+    $('#listFilesModal').modal('hide');
+    input.val($("#result"+filename).html());
+    input.focus();
+};
+
 var currentShareFile;
 function shareFile(filename) {
     currentShareFile = filename;

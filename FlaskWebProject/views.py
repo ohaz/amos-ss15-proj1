@@ -87,13 +87,18 @@ def register():
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('home'))
     form = RegisterForm()
+    error = None
     if form.validate_on_submit():
         # generate randomness
         salt = uuid.uuid4().hex
         # hashing password
         user = dbSession.query(User).filter(User.username == request.form['username']).first()
         email = dbSession.query(User).filter(User.email == request.form['email']).first()
-        if user is None and email is None:
+        if user is not None:
+            error = 'username is already taken'
+        elif email is not None:
+            error = 'email was already used'
+        else:
             password = hashlib.sha256(
                 salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
             user = User(
@@ -102,7 +107,6 @@ def register():
                 password=password,
                 sso="none"
             )
-
             # save new user in database
             dbSession.add(user)
             dbSession.commit()
@@ -113,7 +117,7 @@ def register():
             # login new user now
             login_user(user)
             return redirect(url_for('home'))
-    return render_template('register.html', form=form)
+    return render_template('register.html', form=form, error=error)
 
 
 @login_required
