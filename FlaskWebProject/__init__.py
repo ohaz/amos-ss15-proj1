@@ -6,7 +6,7 @@ from flask import Flask
 from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, scoped_session
 from flask_oauthlib.client import OAuth
 from config import sso_fb_consumer_key
 from config import sso_fb_consumer_secret
@@ -23,9 +23,11 @@ lm.login_view = 'login'
 oauth = OAuth()
 
 # session for connection to database
-dbEngine = create_engine(SQLALCHEMY_DATABASE_URI)
-Session = sessionmaker(bind=dbEngine)
-dbSession = Session()  # check if it is good to create the session with init
+dbEngine = create_engine(SQLALCHEMY_DATABASE_URI,pool_recycle=3600)
+
+# ATT TODO everywhere in code, try to replace autoflush, with manual one? --good approach?
+dbSession = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
+#dbSession = Session()  # check if it is good to create the session with init
 
 # Facebook OAuth2 Login Credentials
 facebook = oauth.remote_app(
