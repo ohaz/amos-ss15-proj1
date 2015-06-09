@@ -30,7 +30,7 @@ define([
             .click()
             .end()
             .sleep(5000)
-            .findById('test1')
+            .findById('resulttest1')
             .getVisibleText()
             .then(function (text) {
                 assert.strictEqual(text, 'test1',
@@ -40,7 +40,7 @@ define([
         'deleteFile': function () {
             return this.remote
                 .setFindTimeout(5000)
-                .findById('deletetest1')
+                .findById('deletetest11_test1')
                 .click()
                 .end()
                 .sleep(5000)
