@@ -4,7 +4,7 @@ define([
     'require'
 ], function (registerSuite, assert, require) {
     registerSuite({
-        name: 'index',
+        name: 'index-connect-to-azure',
 
         // before the suite starts
         setup: function () {

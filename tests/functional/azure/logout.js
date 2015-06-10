@@ -4,31 +4,25 @@ define([
     'require'
 ], function (registerSuite, assert, require) {
     registerSuite({
-        name: 'index-login',
+        name: 'index-logout',
 
         // before the suite starts
         setup: function () {
             return this.remote
                 .setFindTimeout(5000)
                 // login
-                .findById('username')
+                .findById('logout_modal0')
                     .click()
-                    .type('test11')
-                    .end()
-                .findById('password')
-                    .click()
-                    .type('password')
-                    .pressKeys('\uE007') // enter key
                     .end();
         },
 
 
-        '1_2015_login': function () {
+        '1_2015_logout': function () {
             return this.remote
                 .getPageTitle()
                 .then(function (text) {
-                    assert.strictEqual(text, 'Netto-Lohn',
-                        'Page Header should be "Netto-Lohn" after Login.');
+                    assert.strictEqual(text, 'Flask Intro - login page',
+                        'Page Header should be "Flask Intro - login page" after logout.');
                 });
         }
     });

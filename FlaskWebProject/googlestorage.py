@@ -122,8 +122,11 @@ def container_exists(container):
 
 def file_exists(container, filename):
     global GS_storage
-    container = GS_identifier+str(container)
-    return filename in list_files(container)
+    values = list_files(container) 
+    #exception was thrown
+    if values == None :
+        return False
+    return filename in values
 
 
 def list_files(Bucket):  # list/list_next
@@ -328,32 +331,35 @@ def download_file_to_path(Bucket, Filename):
 # DELETE FILES / CONTAINERS
 #
 
-def delete_container(Bucket):
+def delete_container(Bucket1):
     global GS_storage
-    Bucket = GS_identifier+str(Bucket)
+    Bucket = GS_identifier+str(Bucket1)
 
     # Returns if bucket could be deleted,
     # throws Exception if deletion of Bucket not possible [example something
     # is left in Bucket]
 
-    def call_delete_container(Bucket):
+    def call_delete_container(Bucket1):
+        Bucket = GS_identifier+str(Bucket1)
         req = GS_storage.buckets().delete(bucket=Bucket)
-        for k in list_files(Bucket):
-            if not delete_file(Bucket, k):
-                raise exceptions[0]
+        values = list_files(Bucket1)
+        if not values is None:
+            for k in list_files(Bucket1):
+                if not delete_file(Bucket1, k):
+                    raise exceptions[0]
         req.execute()
 
     # try to use current-connection,
     # if not possible get a new connection,
     # if action causes error Return False
     try:
-        call_delete_container(Bucket)
+        call_delete_container(Bucket1)
         return True
     except AccessTokenRefreshError:
         try:
             GS_storage = get_service(
                 GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
-            call_delete_container(Bucket)
+            call_delete_container(Bucket1)
             return True
         except exceptions:
             return False

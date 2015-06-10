@@ -5,7 +5,7 @@ define([
     'intern/dojo/node!leadfoot/Command'
 ], function (registerSuite, assert, require, Command) {
     registerSuite({
-        name: 'index',
+        name: 'index-file-management',
 
         'saveFile': function () {
             return this.remote
@@ -29,18 +29,18 @@ define([
             .findById('loadresult')
             .click()
             .end()
-            .sleep(5000)
-            .findById('test1')
+            .sleep(3000)
+            .findById('resulttest1')
             .getVisibleText()
             .then(function (text) {
-                assert.strictEqual(text, 'test1',
+                assert.strictEqual(text, '1.877,23',
                     'file test1 should have been retrieved from server');
             });
         },
         'deleteFile': function () {
             return this.remote
                 .setFindTimeout(5000)
-                .findById('deletetest1')
+                .findById('deletetest11_test1')
                 .click()
                 .end()
                 .sleep(5000)

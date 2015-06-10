@@ -28,7 +28,7 @@
     <footer class="footer">
       <!--Logout button-->
       <p class="pull-left">
-         <a href="{{ url_for('logout') }}" class="btn btn-primary">Logout</a>
+         <a href="{{ url_for('logout') }}" id=logout_modal0 class="btn btn-primary">Logout</a>
       </p>
 
       <!--Save and load result buttons-->
@@ -48,7 +48,21 @@
             <h4 class="modal-title">Save result</h4>
           </div>
           <div class="modal-body">
-            <h5>Speciffy a filename</h5>
+            <table class="table">
+                  <thead>
+                  <tr>
+                      <th class="col-md-4">Owner</th>
+                      <th class="col-md-4">Filename</th>
+                      <th class="col-md-2">Result</th>
+                      <th class="col-md-2">Save</th>
+                  </tr>
+                  </thead>
+                  <tbody id="listing_write">
+
+                  </tbody>
+                </table>
+              
+            <h5>Specify a filename</h5>
             <input type="text" class="form-control" placeholder="Filename e.g. calculator" id="filename">
           </div>
           <div class="modal-footer">
@@ -72,13 +86,15 @@
                 <table class="table">
                   <thead>
                   <tr>
-                      <th class="col-md-4">Filename</th>
+                      <th class="col-md-2">Owner</th>
+                      <th class="col-md-2">Filename</th>
                       <th class="col-md-2">Result</th>
+                      <th class="col-md-2">Load</th>
                       <th class="col-md-2">Delete</th>
                       <th class="col-md-2">Share</th>
                   </tr>
                   </thead>
-                  <tbody id="listing">
+                  <tbody id="listing_read">
 
                   </tbody>
                 </table>
@@ -104,10 +120,10 @@
                     <br>
                     <h5>Select a permission value</h5>
                     <select id="share-file-permission" class="form-control">
-                        <option value="0">0</option>
-                        <option value="2">2</option>
-                        <option value="4">4</option>
-                        <option value="6">6</option>
+                        <option id='option-0' value="0">0</option>
+                        <option id='option-2' value="2">2</option>
+                        <option id='option-4' value="4">4</option>
+                        <option id='option-6' value="6">6</option>
                     </select>
                   </div>
                   <div class="modal-footer">
