@@ -5,7 +5,7 @@ define([
     'intern/dojo/node!leadfoot/Command'
 ], function (registerSuite, assert, require, Command) {
     registerSuite({
-        name: 'index',
+        name: 'index-userauth',
         
         // before the suite starts
         'MANUAL': function () {

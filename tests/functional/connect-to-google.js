@@ -4,7 +4,7 @@ define([
     'require'
 ], function (registerSuite, assert, require) {
     registerSuite({
-        name: 'index',
+        name: 'index-connect-to-google',
 
         // before the suite starts
         setup: function () {

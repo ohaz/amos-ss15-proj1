@@ -4,7 +4,7 @@ define([
     'require'
 ], function (registerSuite, assert, require) {
     registerSuite({
-        name: 'index',
+        name: 'index-web-comparison',
 
         // before the suite starts
         setup: function () {

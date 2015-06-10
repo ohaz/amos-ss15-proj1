@@ -4,7 +4,7 @@ define([
     'require'
 ], function (registerSuite, assert, require) {
     registerSuite({
-        name: 'index',
+        name: 'index-connect-to-aws',
 
         // before the suite starts
         setup: function () {

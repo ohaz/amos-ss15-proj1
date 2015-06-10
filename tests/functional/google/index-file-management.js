@@ -5,7 +5,7 @@ define([
     'intern/dojo/node!leadfoot/Command'
 ], function (registerSuite, assert, require, Command) {
     registerSuite({
-        name: 'index',
+        name: 'index-file-management',
 
         'saveFile': function () {
             return this.remote
@@ -33,7 +33,7 @@ define([
             .findById('resulttest1')
             .getVisibleText()
             .then(function (text) {
-                assert.strictEqual(text, 'test1',
+                assert.strictEqual(text, '1.877,23',
                     'file test1 should have been retrieved from server');
             });
         },

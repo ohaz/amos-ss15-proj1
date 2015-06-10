@@ -5,26 +5,26 @@ define([
     'intern/dojo/node!leadfoot/Command'
 ], function (registerSuite, assert, require, Command) {
     registerSuite({
-        name: 'index',
+        name: 'index-userauth',
         
         // before the suite starts
-        //'MANUAL': function () {
-        //    //try {
-        //        // we are coming from an uncleaned state
-        //        
-        //        return this.remote
-        //        .setFindTimeout(5000)
-        //        .findById('logout_modal0')
-        //            .click()
-        //            .end();
-        //    //}catch (e){
-        //    //    console.log("ISSUE: ALREADY LOGGED IN!");
-        //    //    console.log("PLease fix this, this should not happen.")    ;
-        //    //}
-        //    //
-        //    //return this.remote
-        //    //    .get(require.toUrl('http://brutto-netto-rechner.appspot.com'));
-        //},
+        'MANUAL': function () {
+            //try {
+                // we are coming from an uncleaned state
+                
+                return this.remote
+                .setFindTimeout(5000)
+                .findById('logout_modal0')
+                    .click()
+                    .end();
+            //}catch (e){
+            //    console.log("ISSUE: ALREADY LOGGED IN!");
+            //    console.log("PLease fix this, this should not happen.")    ;
+            //}
+            //
+            //return this.remote
+            //    .get(require.toUrl('http://brutto-netto-rechner.appspot.com'));
+        },
         
         //GetStartState
 
@@ -179,7 +179,7 @@ define([
             .findById('sharetest_User1_A')
                 .click()
                 .end()
-                .sleep(5000)
+                .sleep(500)
             .findById('share-file-username')    
                 .clearValue()
                 .type("test_User2")
@@ -345,6 +345,7 @@ define([
                 .click()
                 .sleep(3000)
                 .end()
+            .sleep(3000)
             .findById('loadtest_User1_D')
             .click()
             .sleep(3000)
