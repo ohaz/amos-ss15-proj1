@@ -11,3 +11,12 @@ Remote Testing:
 3. Start functional test: ./tests/intern/bin/intern-runner.js config=tests/intern
 
 
+__________________________________________________
+
+setup REST API testing:
+sudo npm install -g jasmine-node
+
+run frisby test:
+amos-ss15-proj1/tests/rest$ jasmine-node mytests_spec.js 
+
+Frisby api: http://frisbyjs.com/docs/api/
