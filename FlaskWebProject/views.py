@@ -237,7 +237,7 @@ def rest_list_files(bucket_id):
     return json_string
 
 
-@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
+@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE']) 
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
     # 1. check if logged in user is owner of bucket
@@ -256,8 +256,8 @@ def rest_delete_container(bucket_id):
     user = dbSession.query(User).filter(User.id == bucket_id).first()
     dbSession.delete(user)
     dbSession.commit()
-    return storageinterface.delete_container(bucket_id)
-
+    storageinterface.delete_container(bucket_id)
+    return "200"
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['GET'])
 def rest_download_file_to_text(bucket_id, file_name):

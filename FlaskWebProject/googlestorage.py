@@ -342,9 +342,11 @@ def delete_container(Bucket1):
     def call_delete_container(Bucket1):
         Bucket = GS_identifier+str(Bucket1)
         req = GS_storage.buckets().delete(bucket=Bucket)
-        for k in list_files(Bucket1):
-            if not delete_file(Bucket1, k):
-                raise exceptions[0]
+        values = list_files(Bucket1)
+        if not values is None:
+            for k in list_files(Bucket1):
+                if not delete_file(Bucket1, k):
+                    raise exceptions[0]
         req.execute()
 
     # try to use current-connection,

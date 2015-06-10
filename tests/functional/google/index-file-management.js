@@ -29,7 +29,7 @@ define([
             .findById('loadresult')
             .click()
             .end()
-            .sleep(5000)
+            .sleep(3000)
             .findById('resulttest1')
             .getVisibleText()
             .then(function (text) {
