@@ -14,6 +14,10 @@ import os
 from .forms import LoginForm, RegisterForm
 from .models import User, Userfile, UserUserfile
 from FlaskWebProject import storageinterface
+import etcd
+from etcd import EtcdNotFile
+from config import etcd_member
+from threads import AckListener
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -28,6 +32,10 @@ class RegexConverter(BaseConverter):
 
 app.url_map.converters['regex'] = RegexConverter
 
+def init_etcd_connection():
+    etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
+    #etcd_client.machines
+    return etcd_client
 
 # Function for LoginManager to get a user with specific id
 @lm.user_loader
@@ -99,6 +107,21 @@ def register():
         elif email is not None:
             error = 'email was already used'
         else:
+            etcd_client = init_etcd_connection()
+            user_string = "registerUser/"+form.username.data+'/'
+            try:
+                etcd_client.write(user_string, "", dir=True)
+            except EtcdNotFile:
+                error = 'username is already taken'
+            else:
+                ack_listener = AckListener(user_string)
+                ack_listener.deamon = False
+                ack_listener.start()
+                ack_listener.join()
+                print "ack listener finished..."
+
+
+            """
             password = hashlib.sha256(
                 salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
             user = User(
@@ -117,6 +140,7 @@ def register():
             # login new user now
             login_user(user)
             return redirect(url_for('home'))
+            """
     return render_template('register.html', form=form, error=error)
 
 
