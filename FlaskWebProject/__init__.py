@@ -59,11 +59,29 @@ google = oauth.remote_app(
     consumer_secret=sso_google_consumer_secret,
 )
 
-def log_format(text, icon='ghost', username=None, channel='#logging'):
+def log_format(text, icon='ghost', attachment=None, username=None, channel='#logging'):
     if username is None:
         username = cloudplatform
-    return json.dumps({"icon_emoji": icon, "text": text, 
-         "icon": icon, "username": username})
+    # Attachment has to be a tuple of level and text (e.g. ("danger", "Critical Error: Import not found"))
+    if attachment:
+        return json.dumps({"icon_emoji": icon, "icon": icon, "username": username,
+            "attachments": [
+            {
+                "fallback": text,
+                "pretext": text,
+                "color": attachment[0],
+                "fields": [
+                {
+                    "title": "Attachment",
+                    "value": attachment[1],
+                    "short": False
+                }
+                ]
+            }
+            ]})
+    else:
+        return json.dumps({"icon_emoji": icon, "text": text, 
+            "icon": icon, "username": username})
 
 
 # Add Logging Errors if the app is not in debug mode
