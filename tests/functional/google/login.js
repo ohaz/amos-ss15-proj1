@@ -19,7 +19,8 @@ define([
                     .click()
                     .type('password')
                     .pressKeys('\uE007') // enter key
-                    .end();
+                    .end()
+                    .sleep(10000);
         },
 
 

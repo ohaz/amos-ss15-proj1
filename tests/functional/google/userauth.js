@@ -7,25 +7,6 @@ define([
     registerSuite({
         name: 'index-userauth',
         
-        // before the suite starts
-        'MANUAL': function () {
-            //try {
-                // we are coming from an uncleaned state
-                
-                return this.remote
-                .setFindTimeout(5000)
-                .findById('logout_modal0')
-                    .click()
-                    .end();
-            //}catch (e){
-            //    console.log("ISSUE: ALREADY LOGGED IN!");
-            //    console.log("PLease fix this, this should not happen.")    ;
-            //}
-            //
-            //return this.remote
-            //    .get(require.toUrl('http://brutto-netto-rechner.appspot.com'));
-        },
-        
         //GetStartState
 
         //Register User1
@@ -47,7 +28,8 @@ define([
                     .click()
                     .type('123456')
                     .pressKeys('\uE007') // enter key
-                    .end();
+                    .end()
+                    .sleep(10000); //potential first time load
         },
 
         //manipulate savevalue A
@@ -176,7 +158,7 @@ define([
                 .click()
                 .end()
                 .sleep(5000)
-            .findById('sharetest_User1_A')
+            .findById('listing_read-sharetest_User1-test_User1_A')
                 .click()
                 .end()
                 .sleep(500)
@@ -207,7 +189,7 @@ define([
                 .click()
                 .end()
                 .sleep(5000)
-            .findById('sharetest_User1_B')
+            .findById('listing_read-sharetest_User1-test_User1_B')
                 .click()
                 .end()
                 .sleep(5000)
@@ -238,7 +220,7 @@ define([
                 .click()
                 .end()
                 .sleep(5000)
-            .findById('sharetest_User1_C')
+            .findById('listing_read-sharetest_User1-test_User1_C')
                 .click()
                 .end()
                 .sleep(5000)
@@ -269,7 +251,7 @@ define([
                 .click()
                 .end()
                 .sleep(5000)
-            .findById('sharetest_User1_D')
+            .findById('listing_read-sharetest_User1-test_User1_D')
                 .click()
                 .end()
                 .sleep(5000)
@@ -327,34 +309,24 @@ define([
             .setFindTimeout(5000)
             .findById('loadresult')
                 .click()
-                .sleep(3000)
                 .end()
                 .sleep(3000)
-            .findById('loadtest_User1_C')
-            .click()
-            .sleep(3000)
-            .end()
-            .findById('shared_widgets_NumberInput_2')
+            .findById('listing_read-resulttest_User1-test_User1_C')
             .getVisibleText()
             .then(function (text) {
                 assert.strictEqual(text, '1.877,23',
                     'This value should be 1.877,23');
             })
-            .end() 
-            .findById('loadresult')
-                .click()
-                .sleep(3000)
-                .end()
-            .sleep(3000)
-            .findById('loadtest_User1_D')
-            .click()
-            .sleep(3000)
             .end()
-            .findById('shared_widgets_NumberInput_2')
+            .findById('listing_read-resulttest_User1-test_User1_D')
+            .getVisibleText()
             .then(function (text) {
                 assert.strictEqual(text, '2.348,37',
                     'This value should be 2.348,37');
             })
+            .end()
+            .findById("close-list-files-modal")
+            .click()
             .end()
             //there may be no A or B
             .sleep(1000);
@@ -380,7 +352,7 @@ define([
                 .click()
                 .end()
                 .sleep(500)
-                .findById('savetest_User1_B')
+                .findById('listing_write-savetest_User1-test_User1_B')
                 .click()
                 .end()
                 .sleep(5000);
@@ -407,7 +379,7 @@ define([
                 .click()
                 .end()
                 .sleep(500)
-                .findById('savetest_User1_D')
+                .findById('listing_write-savetest_User1-test_User1_D')
                 .click()
                 .end()
                 .sleep(5000);
@@ -422,15 +394,15 @@ define([
                 .click()
                 .sleep(3000)
             .end()
-            .findById('loadtest_User1_D')
-            .click()
-            .sleep(3000)
-            .end()
-            .findById('shared_widgets_NumberInput_2')
+            .findById('listing_read-resulttest_User1-test_User1_D')
+            .getVisibleText()
             .then(function (text) {
                 assert.strictEqual(text, '3.261,49',
                     'This value should be 3.261,49');
             })
+            .end()
+            .findById("close-list-files-modal")
+            .click()
             .end()
             //there may be no A or B
             .sleep(1000);

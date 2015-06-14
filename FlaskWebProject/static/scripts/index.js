@@ -14,18 +14,18 @@ $( document ).ready(function() {
                 $("#listing_write").html("");
                 $.each(json, function(i, item) {
                     $("#listing_write").append('' +
-                    '<tr id="file-row-'+json[i][0]+'-'+json[i][1]+'">' +
+                    '<tr id="listing_write-file-row-'+json[i][0]+'-'+json[i][1]+'">' +
                     '<td><h4>'+json[i][0]+'</h4></td> ' +
                     '<td><h4>'+json[i][1]+'</h4></td> ' +
-                    '<td><h4 id="result'+json[i][1]+'"></h4></td>'+
-                    '<td> <button type="button" id="save'+json[i][1]+'" onClick="saveFile(\''+json[i][2] +'\',\''+ json[i][1]+ '\',\'PUT\')" class="btn btn-danger">Save</button> ' +
+                    '<td><h4 id="listing_write-result'+json[i][0]+'-'+json[i][1]+'"></h4></td>'+
+                    '<td> <button type="button" id="listing_write-save'+json[i][0]+'-'+json[i][1]+'" onClick="saveFile(\''+json[i][2] +'\',\''+ json[i][1]+ '\',\'PUT\')" class="btn btn-danger">Save</button> ' +
                     '</tr>');
                     $.ajax({
                         type: "GET",
                         contentType: "application/json; charset=utf-8",
                         url: "/storage/api/v1.0/"+json[i][2]+"/"+json[i][1],
                         success: function (data) {
-                            $("#result"+json[i][1]).html(data);
+                            $('#listing_write-result'+json[i][0]+'-'+json[i][1]).html(data);
                         },
                         error: function (data) {
                             console.log("error in get request");
@@ -63,20 +63,20 @@ $( document ).ready(function() {
                 $("#listing_read").html("");
                 $.each(json, function(i, item) {
                     $("#listing_read").append('' +
-                    '<tr id="file-row-'+json[i][0]+'-'+json[i][1]+'">' +
+                    '<tr id="listing_read-file-row-'+json[i][0]+'-'+json[i][1]+'">' +
                     '<td><h4>'+json[i][0]+'</h4></td> ' +
                     '<td><h4>'+json[i][1]+'</h4></td> ' +
-                    '<td><h4 id="result'+json[i][1]+'"></h4></td>'+
-                    '<td><button type="button" id="load'+json[i][1]+'" onClick="loadFile(\'' + json[i][1]+ '\')" class="btn btn-danger">Load</button></td>'+
-                    '<td> <button type="button" id="delete'+json[i][1]+'" onClick="deleteFile(\'' + json[i][2] +'\',\''+ json[i][1]+'\',\''+ json[i][0]+ '\')" class="btn btn-danger">Delete</button> ' +
-                    '</td><td><button type="button" id="share'+json[i][1]+'" onClick="shareFile(\'' + json[i][1]+ '\')" class="btn btn-primary">Share</button></td>' +
+                    '<td><h4 id="listing_read-result'+json[i][0]+'-'+json[i][1]+'"></h4></td>'+
+                    '<td><button type="button" id="listing_read-load'+json[i][0]+'-'+json[i][1]+'" onClick="loadFile(\'' + json[i][0]+ '\',\'' + json[i][1] + '\')" class="btn btn-danger">Load</button></td>'+
+                    '<td> <button type="button" id="listing_read-delete'+json[i][0]+'-'+json[i][1]+'" onClick="deleteFile(\'' + json[i][2] +'\',\''+ json[i][1]+'\',\''+ json[i][0]+ '\')" class="btn btn-danger">Delete</button> ' +
+                    '</td><td><button type="button" id="listing_read-share'+json[i][0]+'-'+json[i][1]+'" onClick="shareFile(\'' + json[i][1]+ '\')" class="btn btn-primary">Share</button></td>' +
                     '</tr>');
                     $.ajax({
                         type: "GET",
                         contentType: "application/json; charset=utf-8",
                         url: "/storage/api/v1.0/"+json[i][2]+"/"+json[i][1],
                         success: function (data) {
-                            $("#result"+json[i][1]).html(data);
+                            $('#listing_read-result'+json[i][0]+'-'+json[i][1]).html(data);
                         },
                         error: function (data) {
                             console.log("error in get request");
@@ -175,7 +175,7 @@ function deleteFile(filename) {
         url: "/storage/api/v1.0/"+bucket_to+"/"+filename,
         success: function (response) {
             if(response == "200"){
-                $('#file-row-'+userName+'-'+filename).remove();
+                $('#listing_read-file-row-'+userName+'-'+filename).remove();
                 $('#listFilesModal').modal('show')
             }
             console.log(response);
@@ -187,9 +187,12 @@ function deleteFile(filename) {
 };
 
 function loadFile(filename) {
+    first = arguments[0]
+    second = arguments[1]
+    
     var input = $('#shared_widgets_NumberInput_2');
     $('#listFilesModal').modal('hide');
-    input.val($("#result"+filename).html());
+    input.val($('#listing_read-file-row-'+first+'-'+second).html());
     input.focus();
 };
 
