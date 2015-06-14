@@ -6,15 +6,15 @@ import json
 from flask import Flask
 from flask.ext.login import LoginManager
 from flask.ext.sqlalchemy import SQLAlchemy
-import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from flask_oauthlib.client import OAuth
-from config import sso_fb_consumer_key, MAIL_USERNAME, MAIL_PASSWORD, MAIL_SERVER, MAIL_PORT, ADMINS, cloudplatform
-from config import sso_fb_consumer_secret
-from config import sso_google_consumer_key
-from config import sso_google_consumer_secret
+
+from config import cloudplatform
+from config import sso_fb_consumer_key, sso_fb_consumer_secret
+from config import sso_google_consumer_key, sso_google_consumer_secret
 from config import SQLALCHEMY_DATABASE_URI
+from config import SLACK_HANDLER_HOST, SLACK_HANDLER_URL, MAIL_USERNAME, MAIL_PASSWORD, MAIL_SERVER, MAIL_PORT, ADMINS
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -59,50 +59,43 @@ google = oauth.remote_app(
     consumer_secret=sso_google_consumer_secret,
 )
 
-# Add SMTPHandler for Logging Errors if the app is not in debug mode
+def log_format(text, icon='ghost', username=None, channel='#logging'):
+    if username is None:
+        username = cloudplatform
+    return json.dumps({"icon_emoji": icon, "text": text, 
+         "icon": icon, "username": username})
+
+
+# Add Logging Errors if the app is not in debug mode
 if not app.debug:
     import logging
+
+    # Add SMTP Handler
     from logging.handlers import SMTPHandler
     credentials = None
-    if MAIL_USERNAME or MAIL_PASSWORD:
-        credentials = (MAIL_USERNAME, MAIL_PASSWORD)
-    mail_handler = SMTPHandler((MAIL_SERVER, MAIL_PORT),
-                               'no-reply@' + MAIL_SERVER, ADMINS,
-                               cloudplatform + ' failure', credentials)
-    mail_handler.setLevel(logging.ERROR)
-    app.logger.addHandler(mail_handler)
+    if MAIL_SERVER and MAIL_SERVER != '':
+        if MAIL_USERNAME and MAIL_PASSWORD:
+            credentials = (MAIL_USERNAME, MAIL_PASSWORD)
+        mail_handler = SMTPHandler((MAIL_SERVER, MAIL_PORT),
+                                   MAIL_USERNAME+'@' + MAIL_SERVER, ADMINS,
+                                   cloudplatform + ' failure', credentials)
+        mail_handler.setLevel(logging.ERROR)
 
-class StructuredMessage(object):
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
+    # Add Slack Handler
+    from FlaskWebProject.httphandler import CustomHTTPHandler
+    if SLACK_HANDLER_HOST and SLACK_HANDLER_HOST is not '':
+        slack_handler = CustomHTTPHandler(
+            SLACK_HANDLER_HOST, SLACK_HANDLER_URL
+        )
+        slack_handler.setLevel(logging.ERROR)
 
-    def __str__(self):
-        return 'payload=%s' % (json.dumps(self.kwargs))
-
-_ = StructuredMessage   # optional, to improve readability
-
-# Add HTTPHandler for Logging Errors to Slack via POST request if the app is not in debug mode
-if not app.debug:
-    import logging
-    from logging.handlers import HTTPHandler
-    http_handler = logging.handlers.HTTPHandler(
-        'https://hooks.slack.com/services/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',
-        '',
-        method='POST',
-    )
-    http_handler.setLevel(logging.INFO)
-    app.logger.addHandler(http_handler)
-
-    #send test log to slack now
-    print("send log now to slack")
-    print(_(text='this is a log', channel='#logging', username=cloudplatform, icon_emoji='ghost'))
-    app.logger.info(_(text='this is a log', channel='#logging', username=cloudplatform, icon_emoji='ghost'))
-
-    #manually making a post request works
-    url = 'https://hooks.slack.com/services/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'
-    payload = {'channel': '#logging', 'text': 'this is a second log', 'username': cloudplatform, 'icon_emoji': 'ghost'}
-    headers = {'content-type': 'application/json'}
-    r = requests.post(url, data=json.dumps(payload), headers=headers)
+    # Add handlers to modules
+    from logging import getLogger
+    loggers = [app.logger, getLogger('sqlalchemy')
+    ]
+    for logger in loggers:
+       logger.addHandler(mail_handler)
+       logger.addHandler(slack_handler)
 
 import FlaskWebProject.views
 import FlaskWebProject.models
