@@ -63,6 +63,7 @@ def listen_etcd_ack(client, user_key):
         return cloud_hoster_local
 
 def send_sync_data(host_list, data):
+    pass
 
 
 # Function for LoginManager to get a user with specific id
@@ -518,52 +519,5 @@ def rest_syncdb_register_user():
     elif email is not None:
         return "409" #Conflict
     else:
-
-
-
-
-
-
-
-
-
-
-        # generate randomness
-        salt = uuid.uuid4().hex
-        # hashing password
-        
-            etcd_client = init_etcd_connection()
-            user_string = "registerUser/"+form.username.data+'/'
-            try:
-                etcd_client.write(user_string, "", dir=True)
-            except EtcdNotFile:
-                error = 'username is already taken'
-            else:
-                etcd_cloud_hoster = listen_etcd_ack(etcd_client, user_string)
-                print "ack listener finished..."
-
-
-
-            """
-            password = hashlib.sha256(
-                salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
-            user = User(
-                username=form.username.data,
-                email=form.email.data,
-                password=password,
-                sso="none"
-            )
-            # save new user in database
-            dbSession.add(user)
-            dbSession.commit()
-
-            # create container/bucket for the new registered user
-            storageinterface.create_container(user.get_id())
-
-            # login new user now
-            login_user(user)
-            return redirect(url_for('home'))
-
-
-
+        pass
 
