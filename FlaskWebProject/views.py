@@ -18,6 +18,9 @@ import etcd
 from etcd import EtcdNotFile
 from config import etcd_member
 from threads import AckListener
+from config import cloud_hoster
+from etcd import EtcdException
+from config import cloudCounter
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -36,6 +39,31 @@ def init_etcd_connection():
     etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
     #etcd_client.machines
     return etcd_client
+
+def listen_etcd_ack(client, user_key):
+        counter = 0
+        cloud_hoster_local = cloud_hoster
+        while 1:
+            print ">>>Counter: " + str(counter)
+            try:
+                if counter == cloudCounter:
+                    break
+                new_item = client.read(user_key, recursive=True, wait=True)
+                #TODO: should be exported to new thread
+                print "#######################"
+                print "New Key: " + new_item.key
+                for cloud in cloud_hoster_local:
+                    if cloud in new_item.key and not cloud_hoster_local[cloud][0]:
+                        counter = counter + 1
+                        cloud_hoster_local[cloud][0] = True
+                    else:
+                        continue
+            except EtcdException:
+                continue
+        return cloud_hoster_local
+
+def send_sync_data(host_list, data):
+
 
 # Function for LoginManager to get a user with specific id
 @lm.user_loader
@@ -114,11 +142,9 @@ def register():
             except EtcdNotFile:
                 error = 'username is already taken'
             else:
-                ack_listener = AckListener(user_string)
-                ack_listener.deamon = False
-                ack_listener.start()
-                ack_listener.join()
+                etcd_cloud_hoster = listen_etcd_ack(etcd_client, user_string)
                 print "ack listener finished..."
+
 
 
             """
@@ -472,4 +498,72 @@ def rest_share_file(bucket_id, file_name):
         dbSession.add(useruserfile)
         dbSession.commit()
     return "200"
+
+'''
+    REST API FOR SYNC DATABASES BETWEEN DIFFERENT CLOUDS
+'''
+
+@app.route('/storage/api/v1.0/syncdb/registeruser', methods=['POST'])
+def rest_syncdb_register_user():
+    new_username = request.json['username']
+    new_email = request.json['email']
+    new_password = request.json['password']
+    new_sso = request.json['sso']
+
+
+    user = dbSession.query(User).filter(User.username == new_username).first()
+    email = dbSession.query(User).filter(User.email == new_email).first()
+    if user is not None:
+        return "409" #Conflict
+    elif email is not None:
+        return "409" #Conflict
+    else:
+
+
+
+
+
+
+
+
+
+
+        # generate randomness
+        salt = uuid.uuid4().hex
+        # hashing password
+        
+            etcd_client = init_etcd_connection()
+            user_string = "registerUser/"+form.username.data+'/'
+            try:
+                etcd_client.write(user_string, "", dir=True)
+            except EtcdNotFile:
+                error = 'username is already taken'
+            else:
+                etcd_cloud_hoster = listen_etcd_ack(etcd_client, user_string)
+                print "ack listener finished..."
+
+
+
+            """
+            password = hashlib.sha256(
+                salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
+            user = User(
+                username=form.username.data,
+                email=form.email.data,
+                password=password,
+                sso="none"
+            )
+            # save new user in database
+            dbSession.add(user)
+            dbSession.commit()
+
+            # create container/bucket for the new registered user
+            storageinterface.create_container(user.get_id())
+
+            # login new user now
+            login_user(user)
+            return redirect(url_for('home'))
+
+
+
 
