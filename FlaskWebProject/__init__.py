@@ -71,6 +71,8 @@ if not app.debug:
     import logging
 
     # Add SMTP Handler
+    mail_handler = None
+
     from logging.handlers import SMTPHandler
     credentials = None
     if MAIL_SERVER and MAIL_SERVER != '':
@@ -82,6 +84,8 @@ if not app.debug:
         mail_handler.setLevel(logging.ERROR)
 
     # Add Slack Handler
+    slack_handler = None
+
     from FlaskWebProject.httphandler import CustomHTTPHandler
     if SLACK_HANDLER_HOST and SLACK_HANDLER_HOST is not '':
         slack_handler = CustomHTTPHandler(
@@ -91,11 +95,12 @@ if not app.debug:
 
     # Add handlers to modules
     from logging import getLogger
-    loggers = [app.logger, getLogger('sqlalchemy')
-    ]
+    loggers = [app.logger, getLogger('sqlalchemy')]
     for logger in loggers:
-       logger.addHandler(mail_handler)
-       logger.addHandler(slack_handler)
+        if mail_handler:
+            logger.addHandler(mail_handler)
+        if slack_handler:
+            logger.addHandler(slack_handler)
 
 import FlaskWebProject.views
 import FlaskWebProject.models
