@@ -4,6 +4,7 @@ Routes and views for the flask application.
 import hashlib
 import json
 import uuid
+import grequests
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
 from FlaskWebProject import app, db, lm, facebook, google, dbSession
@@ -62,8 +63,17 @@ def listen_etcd_ack(client, user_key):
                 continue
         return cloud_hoster_local
 
-def send_sync_data(host_list, data):
-    pass
+def send_sync_data(host_list, data, rest_interface):
+    data_json = json.dumps(data)
+    headers = {'Content-Type': 'application/json'}
+    for cloud in host_list:
+        if host_list[cloud][0]:
+            host_url = "http://"+host_list[cloud][1]+rest_interface
+            grequests.post(host_url, data=data_json, headers=headers)
+
+
+
+
 
 
 # Function for LoginManager to get a user with specific id
@@ -143,14 +153,22 @@ def register():
             except EtcdNotFile:
                 error = 'username is already taken'
             else:
+                password = hashlib.sha256(
+                salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
                 etcd_cloud_hoster = listen_etcd_ack(etcd_client, user_string)
                 print "ack listener finished..."
-
+                data = {
+                'username': form.username.data,
+                'email': form.email.data,
+                'password': password,
+                'sso': 'none'
+                }
+                send_sync_data(etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser')
+                print "send registration data to clouds"
 
 
             """
-            password = hashlib.sha256(
-                salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
+            
             user = User(
                 username=form.username.data,
                 email=form.email.data,
@@ -511,7 +529,14 @@ def rest_syncdb_register_user():
     new_password = request.json['password']
     new_sso = request.json['sso']
 
+    print "REST API: Username: " + new_username
 
+
+
+    
+    return "200"
+
+"""
     user = dbSession.query(User).filter(User.username == new_username).first()
     email = dbSession.query(User).filter(User.email == new_email).first()
     if user is not None:
@@ -520,4 +545,5 @@ def rest_syncdb_register_user():
         return "409" #Conflict
     else:
         pass
+"""
 
