@@ -6,7 +6,7 @@ import json
 import uuid
 
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
-from FlaskWebProject import app, db, lm, facebook, google, dbSession
+from FlaskWebProject import app, db, lm, facebook, google, dbSession, auto_logger
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from sqlalchemy import or_
 from werkzeug.routing import BaseConverter
@@ -448,4 +448,3 @@ def rest_share_file(bucket_id, file_name):
         dbSession.add(useruserfile)
         dbSession.commit()
     return "200"
-

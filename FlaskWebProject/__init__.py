@@ -83,6 +83,20 @@ def log_format(text, icon='ghost', attachment=None, username=None, channel='#log
         return json.dumps({"icon_emoji": icon, "text": text, 
             "icon": icon, "username": username})
 
+def auto_logger():
+    # Works as a decorator for functions. Automatically sends log messages on exceptions
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as e:
+                # Log the error to all attached handlers and then raise the error again
+                # for flask to further handle it (this way we can still add custom 500 pages)
+                logger.error(log_format("Exception in ["+str(function.__name__)+"]: "+str(e)))
+                raise e
+        return wrapper
+    return decorator
+
 
 # Add Logging Errors if the app is not in debug mode
 if not app.debug:
