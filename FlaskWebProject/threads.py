@@ -33,34 +33,6 @@ class EtcdDBListener(threading.Thread):
                 continue
 
 
-class AckListener(threading.Thread):
-
-    def __init__(self, user_key):
-        threading.Thread.__init__(self)
-        self.user_key = user_key
-
-    def run(self):
-        client = init_etcd_connection()
-        counter = 0
-        cloud_hoster_local = cloud_hoster
-        while 1:
-            print ">>>Counter: " + str(counter)
-            try:
-                if counter == cloudCounter:
-                    break
-                new_item = client.read(self.user_key, recursive=True, wait=True)
-                #TODO: should be exported to new thread
-                print "#######################"
-                print "New Key: " + new_item.key
-                for cloud in cloud_hoster:
-                    if cloud in new_item.key:
-                        counter = counter + 1
-                        cloud = ""
-                    else:
-                        continue
-            except EtcdException:
-                continue
-
 
 
 

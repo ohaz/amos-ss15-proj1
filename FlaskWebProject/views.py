@@ -5,7 +5,7 @@ import hashlib
 import json
 import uuid
 import grequests
-
+import threading
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
 from FlaskWebProject import app, db, lm, facebook, google, dbSession
 from flask.ext.login import login_user, logout_user, current_user, login_required
@@ -18,10 +18,10 @@ from FlaskWebProject import storageinterface
 import etcd
 from etcd import EtcdNotFile
 from config import etcd_member
-from threads import AckListener
 from config import cloud_hoster
 from etcd import EtcdException
 from config import cloudCounter
+from config import cloudplatform
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +45,7 @@ def listen_etcd_ack(client, user_key):
         counter = 0
         cloud_hoster_local = cloud_hoster
         while 1:
-            print ">>>Counter: " + str(counter)
+            print ">>>Ready Counter: " + str(counter)
             try:
                 if counter == cloudCounter:
                     break
@@ -65,13 +65,36 @@ def listen_etcd_ack(client, user_key):
 
 def send_sync_data(host_list, data, rest_interface):
     data_json = json.dumps(data)
-    headers = {'Content-Type': 'application/json'}
+    header = {'Content-Type': 'application/json'}
     for cloud in host_list:
         if host_list[cloud][0]:
             host_url = "http://"+host_list[cloud][1]+rest_interface
-            grequests.post(host_url, data=data_json, headers=headers)
+            print ">>> Host URL: " + host_url
+            req = grequests.post(host_url, data=data_json, headers=header)
+            grequests.map([req])
 
-
+def listen_ack_receiving_data(client, etcd_cloud_hoster, user_key):
+    counter = 0
+    cloud_hoster_local = etcd_cloud_hoster
+    while 1:
+        print ">>>Receiving data Counter: " + str(counter)
+        try:
+            if counter == cloudCounter:
+                break
+            new_item = client.read(user_key, recursive=True, wait=True)
+            print "#######################"
+            print "New Key: " + new_item.key
+            for cloud in cloud_hoster_local:
+                if cloud in new_item.key and cloud_hoster_local[cloud][0]:
+                    if new_item.value == 2:
+                        counter = counter + 1
+                    else:
+                        return -1
+                else:
+                    continue
+        except EtcdException:
+            continue
+    return cloud_hoster_local
 
 
 
@@ -163,9 +186,27 @@ def register():
                 'password': password,
                 'sso': 'none'
                 }
+
+                """
+                Thread fertig anlegen
+                """
+                #res_receiving = listen_ack_receiving_data(etcd_client, etcd_cloud_hoster, user_string)
+
+                listening_ack_thread = threading.Thread(target=listen_ack_receiving_data, args=[etcd_client, etcd_cloud_hoster, user_string])
+                listening_ack_thread.start()
+
                 send_sync_data(etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser')
                 print "send registration data to clouds"
 
+                res_receive_data = listening_ack_thread.join()
+                print res_receive_data
+
+                """
+                if res_receiving == -1:
+                    error == 'registration fails, please try it again'
+                else:
+                    print "sending was successfull"
+                """
 
             """
             
@@ -529,21 +570,21 @@ def rest_syncdb_register_user():
     new_password = request.json['password']
     new_sso = request.json['sso']
 
-    print "REST API: Username: " + new_username
-
-
-
-    
-    return "200"
-
-"""
     user = dbSession.query(User).filter(User.username == new_username).first()
     email = dbSession.query(User).filter(User.email == new_email).first()
-    if user is not None:
-        return "409" #Conflict
-    elif email is not None:
-        return "409" #Conflict
-    else:
-        pass
-"""
 
+    etcd_client = init_etcd_connection()
+
+    if user is not None:
+        user_key = "registerUser/"+new_username+'/'+'ack_'+cloudplatform
+        etcd_client.write(user_key, 1)
+    elif email is not None:
+        user_key = "registerUser/"+new_username+'/'+'ack_'+cloudplatform
+        etcd_client.write(user_key, 1)
+    else:
+        user_key = "registerUser/"+new_username+'/'+'ack_'+cloudplatform
+        print ">>>> REST API: user_key: " + user_key
+        etcd_client.write(user_key, 2)
+        print ">>>>> REST API: wrote to etcd..."
+
+    return "200"

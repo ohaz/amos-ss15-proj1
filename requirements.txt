@@ -5,3 +5,4 @@ sqlalchemy-migrate
 flask-wtf
 flask-oauthlib
 pymysql
+grequests
