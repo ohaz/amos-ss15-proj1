@@ -12,11 +12,12 @@ var username = "test11"
 var password = "password"
 
 // url to app
-var url = "http://localhost:5555/"
+var url = "http://amos-proj1.elasticbeanstalk.com/"
 
 // append known fields to form
 form.append("username", username);
 form.append("password", password);
+
 
 // Login
 frisby.create('Get Request to Flask Intro Page, get Session Cookie and CSRF Token')
@@ -58,3 +59,6 @@ frisby.create('Get Request to Flask Intro Page, get Session Cookie and CSRF Toke
 		.toss()
 	})
 .toss();
+
+// other tests
+// use the sessionCookie in the header for authentification
