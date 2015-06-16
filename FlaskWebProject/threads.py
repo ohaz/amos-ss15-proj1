@@ -20,15 +20,16 @@ class EtcdDBListener(threading.Thread):
         while 1:
             try:
                 new_item = client.read(self.version_prefix, recursive=True, wait=True)
-                #TODO: should be exported to new thread
-                print "#######################"
-                print "New Key: " + new_item.key
-                if "/ack_"+cloudplatform in new_item.key:
+                pattern = "/ack_"+cloudplatform
+                if pattern in new_item.key:
                     continue
-                ack_key = new_item.key+'/ack_'+cloudplatform
-                print "ACK Key: " + ack_key
-                print "#######################"
-                client.write(ack_key, 1)
+                else:
+                    ack_key = new_item.key+'/ack_'+cloudplatform
+                    print "####### DB SYNC Listener ##########"
+                    print "New Key: " + new_item.key
+                    print "ACK Key: " + ack_key
+                    print "###################################"
+                    client.write(ack_key, 1)
             except EtcdException:
                 continue
 
