@@ -51,6 +51,7 @@ def shutdown_session(exception=None):
 @app.route('/')
 @app.route('/index')
 @login_required
+@auto_logger()
 def home():
     """Renders the home page."""
     return render_template(
@@ -59,6 +60,7 @@ def home():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@auto_logger()
 def login():
     """UserName Password Login"""
     if g.user is not None and g.user.is_authenticated():
@@ -82,6 +84,7 @@ def login():
 
 
 @app.route('/register', methods=['GET', 'POST'])
+@auto_logger()
 def register():
     """UserName Password Register"""
     if g.user is not None and g.user.is_authenticated():
@@ -122,11 +125,13 @@ def register():
 
 @login_required
 @app.route('/<path:filepath1>/<path:filepath2>')
+@auto_logger()
 def static_files(filepath1, filepath2):
     return send_from_directory(os.path.join(APP_STATIC, 'scripts', filepath1, os.path.dirname(filepath2)),  os.path.basename(filepath2))
 
 
 @app.route('/logout')
+@auto_logger()
 def logout():
     logout_user()
     return redirect(url_for('home'))
@@ -138,6 +143,7 @@ OAuth2 Facebook Login
 
 
 @app.route('/login_fb', methods=['GET', 'POST'])
+@auto_logger()
 def login_fb():
     callback_url = url_for('facebook_authorized', _external=True)
     return facebook.authorize(callback=callback_url)
@@ -150,6 +156,7 @@ def get_facebook_oauth_token():
 
 @app.route('/login_fb/authorized')
 @facebook.authorized_handler
+@auto_logger()
 def facebook_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
@@ -177,6 +184,7 @@ OAuth2 Google Login
 
 
 @app.route('/login_google', methods=['GET', 'POST'])
+@auto_logger()
 def login_google():
     # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('google_authorized', _external=True)
@@ -190,6 +198,7 @@ def get_google_oauth_token():
 
 @app.route('/login_google/authorized')
 @google.authorized_handler
+@auto_logger()
 def google_authorized(resp):
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
@@ -217,6 +226,7 @@ REST API
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
+@auto_logger()
 def rest_list_files(bucket_id):
     """ Lists files in container """
     if g.user is None or not g.user.is_authenticated():
@@ -237,7 +247,8 @@ def rest_list_files(bucket_id):
     return json_string
 
 
-@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE']) 
+@app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
+@auto_logger()
 def rest_delete_container(bucket_id):
     """ Deletes specified container """
     # 1. check if logged in user is owner of bucket
@@ -260,6 +271,7 @@ def rest_delete_container(bucket_id):
     return "200"
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['GET'])
+@auto_logger()
 def rest_download_file_to_text(bucket_id, file_name):
     """ Returns specified file in container as text """
     # 1 check if user is auth.
@@ -282,6 +294,7 @@ def rest_download_file_to_text(bucket_id, file_name):
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['POST'])
+@auto_logger()
 def rest_upload_from_text(bucket_id, file_name):
     """ Uploads text to new file in container """
     if g.user is None or not g.user.is_authenticated():
@@ -313,6 +326,7 @@ def rest_upload_from_text(bucket_id, file_name):
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
+@auto_logger()
 def rest_overwrite_file_from_text(bucket_id, file_name):
     """ Uploads text to file in container """
     
@@ -342,6 +356,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['DELETE'])
+@auto_logger()
 def rest_delete_file(bucket_id, file_name):
     """ Deletes file in container """
     # 1 check auth.
@@ -373,6 +388,7 @@ def rest_delete_file(bucket_id, file_name):
 
 # Get Shared files, with at least read-permission, includeing username and id
 @app.route('/storage/api/v1.0/share/read', methods=['GET'])
+@auto_logger()
 def rest_share_list_files_read():
     """ Lists files with permission >0 """
     if g.user is None or not g.user.is_authenticated():
@@ -392,6 +408,7 @@ def rest_share_list_files_read():
 
 # Get Shared files, with at least write-permission, includeing username and id
 @app.route('/storage/api/v1.0/share/write', methods=['GET'])
+@auto_logger()
 def rest_share_list_files_write():
     """ Lists files with permission == 2 or 6"""
     if g.user is None or not g.user.is_authenticated():
@@ -412,6 +429,7 @@ def rest_share_list_files_write():
 
 
 @app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_name>', methods=['POST'])
+@auto_logger()
 def rest_share_file(bucket_id, file_name):
     """ Sets permission for file in db """
     username = request.json['username']
