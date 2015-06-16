@@ -1,6 +1,7 @@
 """
 The flask application package.
 """
+import json
 
 from flask import Flask
 from flask.ext.login import LoginManager
@@ -8,11 +9,12 @@ from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from flask_oauthlib.client import OAuth
-from config import sso_fb_consumer_key
-from config import sso_fb_consumer_secret
-from config import sso_google_consumer_key
-from config import sso_google_consumer_secret
+
+from config import cloudplatform
+from config import sso_fb_consumer_key, sso_fb_consumer_secret
+from config import sso_google_consumer_key, sso_google_consumer_secret
 from config import SQLALCHEMY_DATABASE_URI
+from config import SLACK_HANDLER_HOST, SLACK_HANDLER_URL, MAIL_USERNAME, MAIL_PASSWORD, MAIL_SERVER, MAIL_PORT, ADMINS
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -57,6 +59,80 @@ google = oauth.remote_app(
     consumer_secret=sso_google_consumer_secret,
 )
 
+def log_format(text, icon='ghost', attachment=None, username=None, channel='#logging'):
+    if username is None:
+        username = cloudplatform
+    # Attachment has to be a tuple of level and text (e.g. ("danger", "Critical Error: Import not found"))
+    if attachment:
+        return json.dumps({"icon_emoji": icon, "icon": icon, "username": username,
+            "attachments": [
+            {
+                "fallback": text,
+                "pretext": text,
+                "color": attachment[0],
+                "fields": [
+                {
+                    "title": "Attachment",
+                    "value": attachment[1],
+                    "short": False
+                }
+                ]
+            }
+            ]})
+    else:
+        return json.dumps({"icon_emoji": icon, "text": text, 
+            "icon": icon, "username": username})
+
+def auto_logger():
+    # Works as a decorator for functions. Automatically sends log messages on exceptions
+    def decorator(function):
+        def wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as e:
+                # Log the error to all attached handlers and then raise the error again
+                # for flask to further handle it (this way we can still add custom 500 pages)
+                logger.error(log_format("Exception in ["+str(function.__name__)+"]: "+str(e)))
+                raise e
+        return wrapper
+    return decorator
+
+
+# Add Logging Errors if the app is not in debug mode
+if not app.debug:
+    import logging
+
+    # Add SMTP Handler
+    mail_handler = None
+
+    from logging.handlers import SMTPHandler
+    credentials = None
+    if MAIL_SERVER and MAIL_SERVER != '':
+        if MAIL_USERNAME and MAIL_PASSWORD:
+            credentials = (MAIL_USERNAME, MAIL_PASSWORD)
+        mail_handler = SMTPHandler((MAIL_SERVER, MAIL_PORT),
+                                   MAIL_USERNAME+'@' + MAIL_SERVER, ADMINS,
+                                   cloudplatform + ' failure', credentials)
+        mail_handler.setLevel(logging.ERROR)
+
+    # Add Slack Handler
+    slack_handler = None
+
+    from FlaskWebProject.httphandler import CustomHTTPHandler
+    if SLACK_HANDLER_HOST and SLACK_HANDLER_HOST is not '':
+        slack_handler = CustomHTTPHandler(
+            SLACK_HANDLER_HOST, SLACK_HANDLER_URL
+        )
+        slack_handler.setLevel(logging.ERROR)
+
+    # Add handlers to modules
+    from logging import getLogger
+    loggers = [app.logger, getLogger('sqlalchemy')]
+    for logger in loggers:
+        if mail_handler:
+            logger.addHandler(mail_handler)
+        if slack_handler:
+            logger.addHandler(slack_handler)
 
 import FlaskWebProject.views
 import FlaskWebProject.models
