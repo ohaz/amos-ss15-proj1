@@ -23,6 +23,8 @@ class EtcdDBListener(threading.Thread):
                 pattern = "/ack_"+cloudplatform
                 if pattern in new_item.key:
                     continue
+                elif "/commit" in new_item.key:
+                	continue
                 else:
                     ack_key = new_item.key+'/ack_'+cloudplatform
                     print "####### DB SYNC Listener ##########"
@@ -51,53 +53,3 @@ curl -L http://127.0.0.1:4001/v2/keys/dir -XPUT -d ttl=30 -d dir=true
 """
 
 
-
-"""
-def thread2(arg1, stop_event):
-  while(not stop_event.is_set()):
-      stop_event.wait(time)
-      pass
-
-https://stackoverflow.com/questions/6524459/stopping-a-thread-after-a-certain-amount-of-time
-
-"""
-
-"""
-import etcd
-from etcd import EtcdKeyNotFound
-
-#connect to leader node
-client = etcd.Client(host='54.173.141.200', protocol='http', port=4001)
-
-
-#list nodes in cluster
-print "etcd Cluster contains following machines: "
-cluster_nodes = client.machines
-for node in cluster_nodes:
-    print node
-
-#write value to key, overwrite existing key when option prevExists is not set
-#Example for overwrite protection: client.write("/message", "test", prevExist = False)
-client.write("/message", "Test Key Value")
-print "> > Wrote: Test Key Value to key message"
-
-#read from node
-print "> > Read from key: message"
-try:
-    node_value = client.read("/message").value
-    print "Value from key message: " + node_value
-except EtcdKeyNotFound:
-    print "Reading failed, key not found"
-
-#delete key, throws exception when key not found
-print "> > Delete key: message"
-try:
-    client.delete("/message")
-except EtcdKeyNotFound:
-    print "Key not found, deleting key failed"
-
-
-
-
-
-"""
