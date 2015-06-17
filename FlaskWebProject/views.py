@@ -77,7 +77,7 @@ def login():
                     login_user(user)
                     return redirect(request.args.get('next') or url_for('home'))
                 else:
-                    error = 'Invalid passowrd'
+                    error = 'Invalid password'
             else:
                 error = 'Invalid username'
     return render_template('login.html', form=form, error=error)
