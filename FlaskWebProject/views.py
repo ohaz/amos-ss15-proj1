@@ -286,7 +286,7 @@ def register():
                     # login new user 
                     dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
                     user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
-                    dbSession_new.close()
+                    #dbSession_new.close()
                     #user = dbSession.query(User).filter(User.username == "test666").first()
                     #print user
                     login_user(user)
