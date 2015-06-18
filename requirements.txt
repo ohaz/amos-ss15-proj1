@@ -7,4 +7,3 @@ flask-oauthlib
 pymysql
 grequests
 python-etcd
-
