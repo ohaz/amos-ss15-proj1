@@ -7,7 +7,7 @@ import uuid
 import grequests
 import threading
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
-from FlaskWebProject import app, db, lm, facebook, google, dbSession
+from FlaskWebProject import app, db, lm, facebook, google, dbSession, dbEngine
 from flask.ext.login import login_user, logout_user, current_user, login_required
 from sqlalchemy import or_
 from werkzeug.routing import BaseConverter
@@ -24,6 +24,7 @@ from config import cloudCounter
 from config import cloudplatform
 from multiprocessing.pool import ThreadPool
 from multiprocessing import Process, JoinableQueue
+from sqlalchemy.orm import sessionmaker, scoped_session
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -256,7 +257,7 @@ def register():
 
 
                 pool_send_http_data = ThreadPool(processes=1)
-                pool_send_http_data.daemon = True
+                #pool_send_http_data.daemon = True
                 async_send_data = pool_send_http_data.apply_async(send_sync_data, (etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser'))
                 #send_sync_data(etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser')
                 print "+++++ send registration data to clouds"
@@ -282,11 +283,14 @@ def register():
                 else:
                     print "+++++ sending was successfull"
 
-                    # login new user now
-                    #user = dbSession.query(User).filter(User.username == request.form['username']).first()
+                    # login new user 
+                    dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
+                    user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
+                    dbSession_new.close()
+                    #user = dbSession.query(User).filter(User.username == "test666").first()
                     #print user
-                    #login_user(user)
-                    #return redirect(url_for('home'))
+                    login_user(user)
+                    return redirect(url_for('home'))
             
     return render_template('register.html', form=form, error=error)
 
@@ -671,8 +675,8 @@ def rest_syncdb_register_user():
 			sso=new_sso
 		)
         # save new user in database
-		#dbSession.add(user)
-		#dbSession.commit()
+		dbSession.add(user)
+		dbSession.commit()
         # create container/bucket for the new registered user
 		#storageinterface.create_container(user.get_id())
 		etcd_client.write(user_key, 3)
