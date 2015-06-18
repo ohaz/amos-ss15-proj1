@@ -1,4 +1,3 @@
-import time
 import BaseHTTPServer
 import cgi
 import urlparse
@@ -25,12 +24,14 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         global my_errors, search_for
         """Respond to a GET request."""
         if s.path == "/init/":
+            """ Initialize the server and make sure that connection worked """
             my_errors = []
             s.send_response(200)
             s.send_header("Content-type", "text/html")
             s.end_headers()
             s.wfile.write("")
         elif s.path == "/":
+            """ Return 200 if the error we caused exists, else return 400 """
             if len(my_errors) > 0 and search_for in my_errors:
                 s.send_response(200)
                 s.send_header("Content-type", "text/html")
@@ -39,8 +40,10 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             else:
                 s.send_response(400)
         else:
+            """ Respond with 200 for all other requests (e.g. favicon) """
             s.send_response(200)
     def do_POST(s):
+        """Respond to a POST request."""
         global my_errors
         form = cgi.FieldStorage(
             fp=s.rfile, 
@@ -48,16 +51,17 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
             environ={'REQUEST_METHOD':'POST',
                      'CONTENT_TYPE':s.headers['Content-Type'],
                      })
-        """Respond to a POST request."""
         my_errors.append(json.loads(form.value))
         s.send_response(200)
         s.send_header("Content-type", "text/html")
 
 @auto_logger
 def bug():
+    """ Cause a bug to test logging """
     a = 5/0
 
 def start_server():
+    """ Starts a server in background that waits for the logging request and saves it """
     server_class = BaseHTTPServer.HTTPServer
     httpd = server_class((HOST_NAME, PORT_NUMBER), MyHandler)
     try:
@@ -67,6 +71,9 @@ def start_server():
     httpd.server_close()
 
 if __name__ == '__main__':
+    """ Start testing """
+
+    # Testing logging
     thread.start_new_thread(start_server,())
     print(" >>> Trying to reach test server and initialize the test")
     i = 0
