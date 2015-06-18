@@ -4,9 +4,13 @@ import urlparse
 import thread
 import requests
 from FlaskWebProject import auto_logger
-from config import SLACK_HANDLER_HOST
+from config import SLACK_HANDLER_HOST, cloudplatform
 import sys
 import json
+
+if cloudplatform != "testing":
+    print("I can't test without the testing config!")
+    sys.exit(-1)
 
 HOST_NAME = 'localhost'
 PORT_NUMBER = int(SLACK_HANDLER_HOST.split(':')[2])
