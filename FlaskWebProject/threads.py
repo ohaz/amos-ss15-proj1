@@ -21,6 +21,8 @@ class EtcdDBListener(threading.Thread):
             try:
                 new_item = client.read(self.version_prefix, recursive=True, wait=True)
                 pattern = "/ack_"+cloudplatform
+                if new_item.action == "delete":
+            		continue
                 if pattern in new_item.key:
                     continue
                 elif "/commit" in new_item.key:
