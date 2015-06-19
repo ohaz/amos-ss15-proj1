@@ -16,7 +16,14 @@ from config import cloudplatform
 from config import sso_fb_consumer_key, sso_fb_consumer_secret
 from config import sso_google_consumer_key, sso_google_consumer_secret
 from config import SQLALCHEMY_DATABASE_URI
+# Logging
+import sys
 from config import SLACK_HANDLER_HOST, SLACK_HANDLER_URL, MAIL_USERNAME, MAIL_PASSWORD, MAIL_SERVER, MAIL_PORT, ADMINS
+try:
+    from config import LOG_LINE_NO
+except:
+    LOG_LINE_NO = True
+
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -94,8 +101,12 @@ def auto_logger(f):
         except Exception as e:
             # Log the error to all attached handlers and then raise the error again
             # for flask to further handle it (this way we can still add custom 500 pages)
-            logger.error(log_format("Exception in ["+str(f.__name__)+"]: "+str(e)))
-            raise e
+            if LOG_LINE_NO:
+                logger.error(log_format("Exception in ["+str(f.__name__)+" l: "
+                    +str(sys.exc_info()[2].tb_next.tb_lineno)+"]: "+str(e)))
+            else:
+                logger.error(log_format("Exception in ["+str(f.__name__)+"]: "+str(e)))
+                raise e
     return decorated
 
 
