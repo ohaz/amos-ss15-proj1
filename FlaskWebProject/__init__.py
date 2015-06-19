@@ -106,7 +106,7 @@ def auto_logger(f):
                     +str(sys.exc_info()[2].tb_next.tb_lineno)+"]: "+str(e)))
             else:
                 logger.error(log_format("Exception in ["+str(f.__name__)+"]: "+str(e)))
-                raise e
+            raise e
     return decorated
 
 
