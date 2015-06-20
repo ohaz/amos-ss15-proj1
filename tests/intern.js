@@ -86,8 +86,8 @@ define({
 		'tests/functional/google/login',
 		'tests/functional/aws/index-web',
 		'tests/functional/aws/index-web_rev',
-		'tests/functional/google/index-file-management' 
-		'tests/functional/google/userauth',  
+		'tests/functional/google/index-file-management',
+		'tests/functional/google/userauth'
 	],
 
 	// A regular expression matching URLs to files that should not be included in code coverage analysis
