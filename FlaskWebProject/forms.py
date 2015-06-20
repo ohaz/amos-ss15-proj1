@@ -16,7 +16,7 @@ class RegisterForm(Form):
     )
     email = StringField(
         'email',
-        validators=[DataRequired(), Email(message=None), Length(min=6, max=40)]
+        validators=[DataRequired(), Email(message='Invalid email address'), Length(min=6, max=40)]
     )
     password = PasswordField(
         'password',
