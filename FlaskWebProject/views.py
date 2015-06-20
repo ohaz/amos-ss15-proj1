@@ -4,7 +4,7 @@ Routes and views for the flask application.
 import hashlib
 import json
 import uuid
-import grequests
+import unirest
 import threading
 from flask import render_template, send_from_directory, redirect, url_for, session, g, request
 from FlaskWebProject import app, db, lm, facebook, google, dbSession, dbEngine
@@ -45,6 +45,7 @@ def init_etcd_connection():
     return etcd_client
 
 def listen_ready_ack(client, user_key):
+    print "listen to: " + user_key
     counter = 0
     cloud_hoster_local = cloud_hoster
     while 1:
@@ -52,6 +53,7 @@ def listen_ready_ack(client, user_key):
             if counter == cloudCounter:
                 break
             new_item = client.read(user_key, recursive=True, wait=True)
+            #new_item = unirest.get("http://52.25.204.233:4001/v2/keys/registerUser?wait=true")
             #TODO: should be exported to new thread
             print "######### Listen to Ready ACKs #######"
             print "New Key: " + new_item.key
@@ -66,9 +68,10 @@ def listen_ready_ack(client, user_key):
         except EtcdException:
             continue
     return cloud_hoster_local
-
+"""
 def send_sync_data(host_list, data, rest_interface):
     print "----- Begin to send data to the clouds -----"
+    
     data_json = json.dumps(data)
     header = {'Content-Type': 'application/json'}
     request_clouds = []
@@ -81,8 +84,28 @@ def send_sync_data(host_list, data, rest_interface):
             #result = grequests.map([req])
             print "----- posted data to " + host_url + " -----"
     print "----- finished sending data ---------"
-    #grequests.map(request_clouds)
-    return grequests.map(request_clouds)
+    grequests.map(request_clouds)
+    #return grequests.map(request_clouds)
+"""
+
+def unirest_callback(response):
+    pass
+
+def send_sync_data(host_list, data, rest_interface):
+    
+    print "----- Begin to send data to the clouds -----"
+    
+    data_json = json.dumps(data)
+    header = {'Content-Type': 'application/json'}
+    for cloud in host_list:
+        if host_list[cloud][0]:
+            host_url = "http://"+host_list[cloud][1]+rest_interface
+            print "----- host URL: " + host_url + " -----"
+            unirest.post(host_url, headers=header, params=data_json, callback=unirest_callback)
+            print "----- posted data to " + host_url + " -----"
+    print "----- finished sending data ---------"
+
+    
 
 def listen_ack_receiving_data(client, etcd_cloud_hoster, user_key):
     counter = 0
@@ -243,14 +266,14 @@ def register():
                 etcd_cloud_hoster = async_ready_ack.get()
 
                 print "+++++ registerUser: ack listener finished..."
-
+                
                 data = {
                 'username': form.username.data,
                 'email': form.email.data,
                 'password': password,
                 'sso': 'none'
                 }
-
+                
                 #start listener for registration the receiving acks from the clouds
                 pool_receiving_data = ThreadPool(processes=1)
                 async_receive_data = pool_receiving_data.apply_async(listen_ack_receiving_data, (etcd_client, etcd_cloud_hoster, user_string))
@@ -259,9 +282,10 @@ def register():
                 pool_send_http_data = ThreadPool(processes=1)
                 #pool_send_http_data.daemon = True
                 async_send_data = pool_send_http_data.apply_async(send_sync_data, (etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser'))
+                
                 #send_sync_data(etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser')
                 print "+++++ send registration data to clouds"
-
+                
                 res_receive_data = async_receive_data.get()
                 print "+++++ result receiving data: " + str(res_receive_data)
 
@@ -286,11 +310,12 @@ def register():
                     # login new user 
                     dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
                     user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
-                    #dbSession_new.close()
-                    #user = dbSession.query(User).filter(User.username == "test666").first()
-                    #print user
+                    
+                    user = dbSession.query(User).filter(User.username == "test100").first()
+                    
                     login_user(user)
                     return redirect(url_for('home'))
+                
             
     return render_template('register.html', form=form, error=error)
 
@@ -636,7 +661,6 @@ def rest_syncdb_register_user():
     new_sso = request.json['sso']
 
     print ">>>>>> REST FOR EVER..."
-
     user = dbSession.query(User).filter(User.username == new_username).first()
     email = dbSession.query(User).filter(User.email == new_email).first()
 
@@ -675,11 +699,10 @@ def rest_syncdb_register_user():
 			sso=new_sso
 		)
         # save new user in database
-		dbSession.add(user)
-		dbSession.commit()
+		#dbSession.add(user)
+		#dbSession.commit()
         # create container/bucket for the new registered user
 		#storageinterface.create_container(user.get_id())
 		etcd_client.write(user_key, 3)
-	
-
+    
     return "200"

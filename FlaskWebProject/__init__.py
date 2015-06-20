@@ -62,30 +62,11 @@ google = oauth.remote_app(
     consumer_secret=sso_google_consumer_secret,
 )
 
-"""
-def get_etcd_db_listener():
-    
-    db_listener = getattr(g, '_dbListener', None)
-    
-    print "Hello.."
-    if db_listener is None:
-        etcd_db_thread = EtcdDBListener()
-        db_listener = g._dbListener = etcd_db_thread.start()
-    return db_listener
-
-@app.teardown_appcontext
-def teardown_etcd_db_listener(exception):
-    db_listener = getattr(g, '_dbListener', None)
-    if db_listener is not None:
-        db_listener.stop.set()
-local = Local()
-bp()
-etcd_db_listener = LocalProxy(local, get_etcd_db_listener)
-"""
 
 db_listener = EtcdDBListener("/registerUser")
 db_listener.daemon = True
 db_listener.start()
+
 
 
 import FlaskWebProject.views

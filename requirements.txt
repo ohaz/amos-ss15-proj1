@@ -5,5 +5,5 @@ sqlalchemy-migrate
 flask-wtf
 flask-oauthlib
 pymysql
-grequests
 python-etcd
+unirest
