@@ -68,25 +68,7 @@ def listen_ready_ack(client, user_key):
         except EtcdException:
             continue
     return cloud_hoster_local
-"""
-def send_sync_data(host_list, data, rest_interface):
-    print "----- Begin to send data to the clouds -----"
-    
-    data_json = json.dumps(data)
-    header = {'Content-Type': 'application/json'}
-    request_clouds = []
-    for cloud in host_list:
-        if host_list[cloud][0]:
-            host_url = "http://"+host_list[cloud][1]+rest_interface
-            print "----- host URL: " + host_url + " -----"
-            req = grequests.post(host_url, data=data_json, headers=header)
-            request_clouds.append(req)
-            #result = grequests.map([req])
-            print "----- posted data to " + host_url + " -----"
-    print "----- finished sending data ---------"
-    grequests.map(request_clouds)
-    #return grequests.map(request_clouds)
-"""
+
 
 def unirest_callback(response):
     pass
@@ -311,7 +293,7 @@ def register():
                     dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
                     user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
                     
-                    user = dbSession.query(User).filter(User.username == "test100").first()
+                    #user = dbSession.query(User).filter(User.username == "test100").first()
                     
                     login_user(user)
                     return redirect(url_for('home'))
@@ -699,8 +681,8 @@ def rest_syncdb_register_user():
 			sso=new_sso
 		)
         # save new user in database
-		#dbSession.add(user)
-		#dbSession.commit()
+		dbSession.add(user)
+		dbSession.commit()
         # create container/bucket for the new registered user
 		#storageinterface.create_container(user.get_id())
 		etcd_client.write(user_key, 3)
