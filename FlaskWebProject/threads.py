@@ -21,13 +21,16 @@ class EtcdDBListener(threading.Thread):
             try:
                 new_item = client.read(self.version_prefix, recursive=True, wait=True)
                 pattern = "/ack_"+cloudplatform
+                key_level = new_item.key.split("/")
+                print key_level
+                print len(key_level)
                 if new_item.action == "delete":
-            		continue
+                    continue
                 if pattern in new_item.key:
                     continue
                 elif "/commit" in new_item.key:
-                	continue
-                else:
+                    continue
+                elif len(key_level) == 3:
                     ack_key = new_item.key+'/ack_'+cloudplatform
                     print "####### DB SYNC Listener ##########"
                     print "New Key: " + new_item.key
