@@ -37,13 +37,13 @@ def deploy():
     print(' Adding files to git')
     command = ['git', 'add', '.']
     run_subprocess(command)
-     print(' > > Doing a git commit')
+    print(' > > Doing a git commit')
     command = ['git', '--git-dir='+os.path.join(OWN_FOLDER,'azure_repo', '.git/'), '--work-tree='+os.path.join(OWN_FOLDER, 'azure_repo/'), 'commit', '-am', '"Autodeploy with deployer script"']
     run_subprocess(command)
     print(' > > Pushing')
     command = ['git', '--git-dir='+os.path.join(OWN_FOLDER,'azure_repo', '.git/'), '--work-tree='+os.path.join(OWN_FOLDER, 'azure_repo/'), 'push']
     run_subprocess(command)
-   print(' > > Done Pushing')
+    print(' > > Done Pushing')
 
 def prepare_deployment():
     # Preparing for the deployment by downloading the azure repo and copying the files needed
