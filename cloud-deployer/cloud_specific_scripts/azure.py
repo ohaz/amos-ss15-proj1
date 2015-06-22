@@ -33,13 +33,17 @@ def deploy():
         return
     print(' > > Copying downloaded files into repo')
     distutils.dir_util.copy_tree(os.path.join(OWN_FOLDER, 'repo'), os.path.join(OWN_FOLDER, 'azure_repo'))
-    print(' > > Doing a git commit')
+    distutils.file_util.copy_file(os.path.join(OWN_FOLDER, 'config.py'), os.path.join(OWN_FOLDER, 'azure_repo', 'config.py'))
+    print(' Adding files to git')
+    command = ['git', 'add', '.']
+    run_subprocess(command)
+     print(' > > Doing a git commit')
     command = ['git', '--git-dir='+os.path.join(OWN_FOLDER,'azure_repo', '.git/'), '--work-tree='+os.path.join(OWN_FOLDER, 'azure_repo/'), 'commit', '-am', '"Autodeploy with deployer script"']
     run_subprocess(command)
     print(' > > Pushing')
     command = ['git', '--git-dir='+os.path.join(OWN_FOLDER,'azure_repo', '.git/'), '--work-tree='+os.path.join(OWN_FOLDER, 'azure_repo/'), 'push']
     run_subprocess(command)
-    print(' > > Done Pushing')
+   print(' > > Done Pushing')
 
 def prepare_deployment():
     # Preparing for the deployment by downloading the azure repo and copying the files needed
