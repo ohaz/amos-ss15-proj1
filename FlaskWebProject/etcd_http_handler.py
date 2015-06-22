@@ -1,27 +1,112 @@
 import requests
 import sys
 
-class Etcd_Http_Exceptions(Exception):
-    """
-    This Module Exceptions
-    """
-    def __init__(self, message=None):
-        super(exception,self).__init__(message)
+"""
+Exceptions-Hierarchy:
 
-class InvalidResponse(Etcd_Http_Exceptions):
-    """
-    Response is eiter 4** or 5**
-    """
-    def __init__(self, message=None):
-        super(exception,self).__init__(message)
+    Etcd_Http_Exception(Exception)
+        InvalidParameter
+        EtcdException
+            Etcd_NotAFile
+        Etcd_Cluster_Down
 
-class InvalidParameter(Etcd_Http_Exceptions):
+"""
+
+class Etcd_Http_Exception(Exception):
+    def __init__(self, message=None):
+        super(Exception,self).__init__(message)
+
+class Invalid_Parameter(Etcd_Http_Exception):
     """
     Calling a function with wrong parameters
     """
     def __init__(self, message="Parameter is Invalid"):
-        super(exception,self).__init__(message)
+        super(Exception,self).__init__(message)
 
+class Etcd_Exception(Etcd_Http_Exception):
+    """
+    Response of etcd-server has an error
+    """
+    def __init__(self, message="Etcd-Server responded with an error"):
+        super(Exception,self).__init__(message)
+
+class Etcd_NotAFile(Etcd_Exception):
+    """
+    Not a file exception!
+    """
+    def __init__(self, message="Not a File!"):
+        super(Exception,self).__init__(message)
+
+class Etcd_Cluster_Down(Etcd_Http_Exception):
+    """
+    Etcd-cluster is down.
+    """
+    def __init__(self, message="No Etcd-Server in the cluster can be accessed"):
+        super(Exception,self).__init__(message)
+   
+"""
+Errorcodes thrown by etcd-server
+"""
+
+#see etcd Documentation for this error_codes
+error_exception = {
+    100: Etcd_Exception, # "Key not found" 
+    101: Etcd_Exception, # "Compare failed"
+    102: Etcd_NotAFile,  # "Not a file" 
+    104: Etcd_Exception, # "Not a directory"
+    105: Etcd_Exception, # "Key already exists"
+    107: Etcd_Exception, # "Root is read only"
+    108: Etcd_Exception, # "Directoy not empty"
+    201: Etcd_Exception, # "PrevValue is Required in POST form"
+    202: Etcd_Exception, # "The given TTL in POST form is not a number"
+    203: Etcd_Exception, # "The given index in POST form is not a number"
+    209: Etcd_Exception, # "Invalid field"
+    210: Etcd_Exception, # "Invalid POST form"
+    300: Etcd_Exception, # "Raft Internal Error"
+    301: Etcd_Exception, # "During Leader Election"
+    400: Etcd_Exception, # "watcher is cleared due to etcd recovery"
+    401: Etcd_Exception, # "The event in requested index is outdated and cleared"
+    500: Etcd_Exception  # General Server Error
+}
+
+"""
+Analyse Server-response
+"""
+
+def _handle_response(response) :
+    """
+    Returns an Exception if response is an error, other wise None
+
+    Args:
+        Json-object which is schema of etcd-server
+    
+    Returns:
+        None or Exception-object
+    """
+    
+    # is Http-Message ok, return
+    if response.status_code in [200,201]:
+        return None
+    
+    # Http-Message is not ok
+    else :
+        resp = None
+        message = ""
+        
+        #try to post-process response
+        try:
+            resp = response.json()
+            message = "Code: %d , Meesage: %s, Cause: %s" % (resp["errorCode"],resp["message"],resp["cause"])
+        except :
+            message = "Can't decipher response [at least needed errorCode, message, cause]: "
+            return Etcd_Http_Exception(message + str(response.text))
+        else:
+            return error_exception[resp["errorCode"]](message)
+
+
+"""
+Connection Manager
+"""
 
 class Client(object) :
     
@@ -50,16 +135,16 @@ class Client(object) :
             self.cluster_cache = self.cluster
         else:
             self.cluster_cache = [self.url]
-        print(self.cluster_cache)
+        print self.cluster_cache
 
     @property
     def cluster(self):
         uri = "%s/%s/%s" % (self.url, self.ver, 'machines')
         resp = requests.get(uri)
-        return [x.encode("utf-8") for x in resp.text.split(',')]
+        return [x.encode("utf-8") for x in resp.text.split(', ')]
     
     def write(self, key, value, **kwargs) :
-        print ("write")
+        #print "write"
         key = self._clean_key(key)
         
         if value is not None:
@@ -81,9 +166,13 @@ class Client(object) :
         
         # RequestFunction
         def _request():
+            #print "XXX before: " + self.url
             uri = "%s/%s/keys%s" % (self.url, self.ver, key)
+            #print "XXX uri: " + uri
+            #print "XXX payload: " + str(payload)
             resp = requests.put(uri,params=payload, allow_redirects=True)
-            print ("put:: " + resp.url)
+            #print "XXX put:: " + resp.url
+            #print "XXX resp:: " + str(resp)
             return resp
 
         # send request, with check on other clusters
@@ -105,7 +194,7 @@ class Client(object) :
             InvalidResponse
         
         """
-        print ("read")    
+        #print "read"
         
         # Work to bedone before _requestFunction
         key = self._clean_key(key)
@@ -121,7 +210,7 @@ class Client(object) :
         def _request() :
             uri = "%s/%s/keys%s" % (self.url, self.ver, key)
             resp = requests.get(uri, params=payload, allow_redirects=True) 
-            print (resp.url)
+            #print resp.url
             return resp
 
         # send request, with check on other clusters
@@ -142,13 +231,13 @@ class Client(object) :
 
     def _connect_to_cluster(self, function): 
         """
-        Listen to the key on the etcd-server
+        Calls function apropiate for clustermanagment
         
         Args:
-            function (function), which sends request [use Client parameters!], is called in body
+            function (function), which sends request, is called in body
 
         Returns:
-            response of server, if not 4** or 5**
+            response of server, if valid
 
         Raises:
             InvalidResponse
@@ -158,28 +247,34 @@ class Client(object) :
         code = []
         retry = 0
         while True :
+            #print self.url
             resp = function()
             
             #potential ErrorMessage
             code += [self.url +":"+ str(resp.status_code)]
-            if resp.status_code == requests.codes.ok :
+            error = _handle_response(resp)
+            print(error)
 
+            # is response ok?
+            if error is None :
+                
                 #update machines, because at least 1 machine didn't work
-                if retry > 0 : self.cluster_cache = self.cluster
-                return resp
+                if retry > 0 : self.cluster_cache = self.cluster   
+                return resp.json()
+            
+            # If the request caused a bad response at etcd, raise it here
+            elif isinstance(error, Etcd_Exception) :
+                raise error
             
             # If IP not working, get Next server in cluster_cache
-            elif retry < len(self.cluster_cache)-1:
+            elif retry < len(self.cluster_cache)-1: 
                 retry += 1
-                self.index = (self.index + 1) % len(cluster_cache)
+                self.index = (self.index + 1) % len(self.cluster_cache)
                 self.url = self.cluster_cache[self.index]
             
             # All IPs seem to be not working, raise exception
             else :
-                raise InvalidResponse('The servers responded with %s .' % str(code))
-
-
-
+                raise Etcd_Cluster_Down('The servers responded with %s .' % str(code))
 
 ##
 ## DEBUG
@@ -196,70 +291,60 @@ cloudCounter = 1
  
  # init etcd connection
 def DEBUG_init_etcd_connection():
-    print(etcd_member[0].split(":")[0])
+    print etcd_member[0].split(":")[0]
     etcd_client = Client(host=etcd_member[0].split(":")[0], protocol='http', port=4001, reconnect=True)
     return etcd_client
 
-
 def DEBUG_listen_ready_ack(client, user_key):
-    print ("Start Threading....\n")
     counter = 0
     cloud_hoster_local = cloud_hoster
     while 1:
-        print ("iter\n")
-        if counter == cloudCounter:
-            break
-        new_item = client.read(user_key, recursive=True, wait=True)
-
-        #TODO: should be exported to new thread
-        print ("######### Listen to Ready ACKs #######\n")
-        print ("New Key: " + new_item['key'] + "\n")
-        print ("#####################################\n")
-        for cloud in cloud_hoster_local:
-            if cloud in new_item["key"] and not cloud_hoster_local[cloud][0]:
-                counter = counter + 1
-                cloud_hoster_local[cloud][0] = True
+        try:
+            if counter == cloudCounter:
+                break
+            new_item = client.read(user_key, recursive=True, wait=True)
+            #TODO: should be exported to new thread
+            print "######### Listen to Ready ACKs #######"
+            print "New Key: " + new_item['key']
+            print "#####################################"
+            for cloud in cloud_hoster_local:
+                if cloud in new_item["key"] and not cloud_hoster_local[cloud][0]:
+                    counter = counter + 1
+                    cloud_hoster_local[cloud][0] = True
+                    print ">>>listen_ready_ack: counter: " + str(counter)
+                else:
+                    continue
+        except :
+            continue
     return cloud_hoster_local
 
 def DEBUGG():
     test_user = 'test_user03'
     
-    print("Init Connection")
     etcd_client = DEBUG_init_etcd_connection()
-    
     user_string = "registerUser/"+test_user+'/'
 
-    print("Start Pool")
     pool_ready_ack = ThreadPool(processes=1)
     async_ready_ack = pool_ready_ack.apply_async(DEBUG_listen_ready_ack, (etcd_client, user_string))
-    
-    print("Write Key in etcd")
-    resp = etcd_client.write(user_string, None, dir=True)
-    #time.sleep(5)
+    try:
+        etcd_client.write(user_string, "", dir=True)
+    except Etcd_NotAFile:
+        pool_ready_ack.terminate()
+        error = 'etcd: username is already taken'
+    else:
+        #password = hashlib.sha256(
+        #salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
+        
+        etcd_cloud_hoster = async_ready_ack.get()
 
+        print "+++++ registerUser: ack listener finished..."
 
-    print("Terminate Threads")
-    #pool_ready_ack.terminate()
-
-    
-
-    
-    #else:
-    #    
-    #    password = hashlib.sha256(
-    #    salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
-
-    #    #etcd_cloud_hoster = listen_ready_ack(etcd_client, user_string)
-    #    etcd_cloud_hoster = async_ready_ack.get()
-
-    #    print "+++++ registerUser: ack listener finished..."
-
-    #    data = {
-    #    'username': form.username.data,
-    #    'email': form.email.data,
-    #    'password': password,
-    #    'sso': 'none'
-    #    }
+        #data = {
+        #'username': form.username.data,
+        #'email': form.email.data,
+        #'password': password,
+        #'sso': 'none'
+        #}
 
     #    #start listener for registration the receiving acks from the clouds
     #    pool_receiving_data = ThreadPool(processes=1)
