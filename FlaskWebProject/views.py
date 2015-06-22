@@ -14,12 +14,13 @@ from werkzeug.routing import BaseConverter
 import os
 from .forms import LoginForm, RegisterForm
 from .models import User, Userfile, UserUserfile
-from FlaskWebProject import storageinterface
-import etcd
-from etcd import EtcdNotFile
+#from FlaskWebProject import storageinterface
+#import etcd
+import etcd_http_handler
+#from etcd import EtcdNotFile
 from config import etcd_member
 from config import cloud_hoster
-from etcd import EtcdException
+#from etcd import EtcdException
 from config import cloudCounter
 from config import cloudplatform
 from multiprocessing.pool import ThreadPool
@@ -39,10 +40,12 @@ class RegexConverter(BaseConverter):
 
 app.url_map.converters['regex'] = RegexConverter
 
+# init etcd connection
 def init_etcd_connection():
-    etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
+    etcd_client = etcd_http_handler.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
     #etcd_client.machines
     return etcd_client
+
 
 def listen_ready_ack(client, user_key):
     counter = 0
@@ -54,16 +57,16 @@ def listen_ready_ack(client, user_key):
             new_item = client.read(user_key, recursive=True, wait=True)
             #TODO: should be exported to new thread
             print "######### Listen to Ready ACKs #######"
-            print "New Key: " + new_item.key
+            print "New Key: " + new_item['key']
             print "#####################################"
             for cloud in cloud_hoster_local:
-                if cloud in new_item.key and not cloud_hoster_local[cloud][0]:
+                if cloud in new_item["key"] and not cloud_hoster_local[cloud][0]:
                     counter = counter + 1
                     cloud_hoster_local[cloud][0] = True
                     print ">>>listen_ready_ack: counter: " + str(counter)
                 else:
                     continue
-        except EtcdException:
+        except :
             continue
     return cloud_hoster_local
 
