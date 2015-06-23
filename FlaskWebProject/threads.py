@@ -9,6 +9,7 @@ from config import cloudCounter
 from config import cloud_hoster
 
 
+
 class EtcdDBListener(threading.Thread):
 
     def __init__(self, version_prefix):
@@ -22,8 +23,6 @@ class EtcdDBListener(threading.Thread):
                 new_item = client.read(self.version_prefix, recursive=True, wait=True)
                 pattern = "/ack_"+cloudplatform
                 key_level = new_item.key.split("/")
-                print key_level
-                print len(key_level)
                 if new_item.action == "delete":
                     continue
                 if pattern in new_item.key:
@@ -39,7 +38,6 @@ class EtcdDBListener(threading.Thread):
                     client.write(ack_key, 1)
             except EtcdException:
                 continue
-
 
 
 
