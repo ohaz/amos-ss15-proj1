@@ -125,7 +125,6 @@ def register():
 
 @login_required
 @app.route('/<path:filepath1>/<path:filepath2>')
-@auto_logger
 def static_files(filepath1, filepath2):
     return send_from_directory(os.path.join(APP_STATIC, 'scripts', filepath1, os.path.dirname(filepath2)),  os.path.basename(filepath2))
 
