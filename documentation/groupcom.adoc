@@ -1,20 +1,11 @@
-Group Communication
-=========================
+= Group Communication
 
+== Component Overview
 
-== Component Overview ==
-
-+
----
 image::groupcom_pics/amos_komp.PNG[ComponentOverview, width=500]
----
-+
 
-== Sequenz Flow ==
-. In following a sequenz flow for registering a new user is described. 
-+
----
+== Sequenz Flow
+In following a sequenz flow for registering a new user is described. 
+
 image::groupcom_pics/amos_sequenz.PNG[ComponentOverview, width=500]
----
-+
 
