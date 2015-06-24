@@ -77,7 +77,7 @@ def login():
                     login_user(user)
                     return redirect(request.args.get('next') or url_for('home'))
                 else:
-                    error = 'Invalid passowrd'
+                    error = 'Invalid password'
             else:
                 error = 'Invalid username'
     return render_template('login.html', form=form, error=error)
@@ -125,7 +125,6 @@ def register():
 
 @login_required
 @app.route('/<path:filepath1>/<path:filepath2>')
-@auto_logger
 def static_files(filepath1, filepath2):
     return send_from_directory(os.path.join(APP_STATIC, 'scripts', filepath1, os.path.dirname(filepath2)),  os.path.basename(filepath2))
 
