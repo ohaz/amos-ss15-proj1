@@ -20,13 +20,9 @@ from etcd import EtcdNotFile
 from config import etcd_member
 from config import cloud_hoster
 from etcd import EtcdException
-from config import cloudCounter
 from config import cloudplatform
-from multiprocessing.pool import ThreadPool
-from multiprocessing import Process, JoinableQueue
 from sqlalchemy.orm import sessionmaker, scoped_session
-import multiprocessing as mp
-from multiprocessing import Process, Queue
+from multiprocessing import Queue
 
 
 # Global constants
@@ -118,23 +114,31 @@ def listen_ack_receiving_data(client, user_key, platform, queue):
     #To catch the timeout Exception form unirest when cloud does not answer
     except Exception,e:
         receive_result[platform][0] = False
-    queue.put(receive_result)
+    finally:
+    	queue.put(receive_result)
 
 
+def listen_commit_status(client, user_key, queue):
 
-def listen_commit_status(client, user_key):
-    while 1:
-        try:
-            new_item = client.read(user_key, recursive=True, wait=True)
-            print "######### NEW COMMIT MSG #########"
-            print "Key: " + new_item.key
-            print "Value: " + new_item.value
-            print "##################################"
-            break
-        except EtcdException:
-            continue
-    #queue.put(new_item.value)
-    return new_item.value
+    try:
+        url = "http://"+etcd_member[0]+":4001/v2/keys"+user_key+"?wait=true"
+        print url
+        print "wait url: " + url
+        unirest.timeout(10)
+        etcd_response = unirest.get(url)
+        new_item = etcd_response.body['node']
+        #TODO: should be exported to new thread
+        print "######### Listen to Commit ACK #######"
+        print "New Key: " + new_item['key']
+        print "New Value: " + new_item['value']
+        print "#####################################"
+        ret_val = new_item['value']
+    #To catch the timeout Exception form unirest when cloud does not answer
+    except Exception,e:
+        ret_val = "0"
+    finally:
+    	queue.put(ret_val)
+
 
 
 def listen_ack_written_data(client, user_key, platform, queue):
@@ -159,7 +163,8 @@ def listen_ack_written_data(client, user_key, platform, queue):
     #To catch the timeout Exception form unirest when cloud does not answer
     except Exception,e:
         receive_result[platform][0] = False
-    queue.put(receive_result)
+    finally:
+    	queue.put(receive_result)
 
 
 # Function for LoginManager to get a user with specific id
@@ -235,11 +240,6 @@ def register():
         else:
             etcd_client = init_etcd_connection()
             user_string = "registerUser/"+form.username.data+'/'
-
-            """
-            pool_ready_ack = ThreadPool(processes=1)
-            async_ready_ack = pool_ready_ack.apply_async(listen_ready_ack, (etcd_client, user_string))
-            """
             
             async_ready_queue = Queue()
             thread_listen_ready_list = []
@@ -267,8 +267,6 @@ def register():
                 salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
 
 
-                #etcd_cloud_hoster = async_ready_ack.get()
-
                 #wait for all listen_ack processes
                 for p in thread_listen_ready_list:
                     p.join()
@@ -293,9 +291,6 @@ def register():
                 'sso': 'none'
                 }
                 
-                #start listener for registration the receiving acks from the clouds
-                #pool_receiving_data = ThreadPool(processes=1)
-                #async_receive_data = pool_receiving_data.apply_async(listen_ack_receiving_data, (etcd_client, etcd_cloud_hoster, user_string))
 
                 async_receive_queue = Queue()
                 thread_listen_receive_list = []
@@ -303,15 +298,12 @@ def register():
                 for hoster in etcd_cloud_hoster:
                     if etcd_cloud_hoster[hoster][1]:
                         hoster_string_ready = "/"+user_string +"ack_"+hoster
-                        #pros = Process(target=listen_ack_receiving_data, args=(etcd_client, hoster_string_ready, hoster, async_receive_queue))
                         pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster, async_receive_queue)
                         pros.daemon = True
                         pros.start()
                         thread_listen_receive_list.append(pros)
                         thread_counter_clouds = thread_counter_clouds + 1
 
-                #pool_send_http_data = ThreadPool(processes=1)
-                #async_send_data = pool_send_http_data.apply_async(send_sync_data, (etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser'))
                 async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data, '/storage/api/v1.0/syncdb/registeruser')
                 async_send_data.daemon = True
                 async_send_data.start()
@@ -331,7 +323,6 @@ def register():
                         if not result[r][0]:
                             res_receive_data = -1
                 etcd_client.write('/azure_msg', res_receive_data)
-                #res_receive_data = async_receive_data.get()
                 print "+++++ result receiving data: " + str(res_receive_data)
 
                 
@@ -347,7 +338,6 @@ def register():
                     for hoster in etcd_cloud_hoster:
                         if etcd_cloud_hoster[hoster][1]:
                             hoster_string_ready = "/"+user_string +"ack_"+hoster
-                            #pros = Process(target=listen_ack_written_data, args=(etcd_client, hoster_string_ready, hoster, async_written_queue))
                             pros = FuncThread(listen_ack_written_data, etcd_client, hoster_string_ready, hoster, async_written_queue)
                             pros.daemon = True
                             pros.start()
@@ -355,7 +345,7 @@ def register():
                             thread_counter_clouds = thread_counter_clouds + 1
                     
                     etcd_client.write(commit_string, 1)
-                                    #wait for all listen_ack processes
+                    #wait for all listen_ack processes
                     for p in thread_listen_written_list:
                         p.join()
 
@@ -730,14 +720,13 @@ def rest_syncdb_register_user():
     email = dbSession.query(User).filter(User.email == new_email).first()
 
     etcd_client = init_etcd_connection()
-    commit_key = "registerUser/"+new_username+'/'+'commit'
+    commit_key = "/registerUser/"+new_username+'/'+'commit'
 
-    pool = ThreadPool(processes=1)
-    async_listen_commit = pool.apply_async(listen_commit_status, (etcd_client, commit_key))
-    #async_commit_queue = Queue()
-    #async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
-    #async_commit_data.daemon = True
-    #async_commit_data.start()
+
+    async_commit_queue = Queue()
+    async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
+    async_commit_data.daemon = True
+    async_commit_data.start()
 
     if user is not None:
         user_key = "registerUser/"+new_username+'/'+'ack_'+cloudplatform
@@ -756,12 +745,10 @@ def rest_syncdb_register_user():
 
 
 
-    commit_res = async_listen_commit.get()
-    #async_commit_data.join()
-    #commit_res = async_commit_queue.get()
+    async_commit_data.join()
+    commit_res = async_commit_queue.get()
     print ">>>> commit result: " + commit_res
 
-    etcd_client.write("/msg_azure_commit", commit_res)
 
     if commit_res == "1":
         user = User(
