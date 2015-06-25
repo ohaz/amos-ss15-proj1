@@ -41,7 +41,6 @@ class EtcdDBListener(threading.Thread):
 
 
 
-
 def init_etcd_connection():
     etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
     #etcd_client.machines
