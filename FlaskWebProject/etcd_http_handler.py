@@ -1,5 +1,5 @@
 import requests
-# import sys
+import sys
 
 """
 Exceptions-Hierarchy:
@@ -170,7 +170,7 @@ class Client(object):
 
         if "dir" in kwargs and kwargs["dir"]:
             if value:
-                raise InvalidParameter(
+                raise InvalidParameter(  # TODO: is not defined
                     "Icompatibale Parameters: dir=True with Parameter value != None or """)
 
         # Work to bedone before _requestFunction
