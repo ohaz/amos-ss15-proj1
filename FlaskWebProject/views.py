@@ -551,7 +551,6 @@ def rest_upload_from_text(bucket_id, file_name):
     for hoster in cloud_hoster:
         if cloud_hoster[hoster][1] is not None:
             hoster_string_ready = "/" + file_string + "ack_" + hoster
-            # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
             pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
             pros.daemon = True
             pros.start()
@@ -563,7 +562,32 @@ def rest_upload_from_text(bucket_id, file_name):
         for p in thread_listen_ready_list:
             p.terminate()
         error = 'etcd: username is already taken'
+    else:
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
 
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_ready_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+
+        print "+++++ saveFile: ack listener finished..."
+
+        # Start listen to ACK for temporary saving a file
+        # call REST API of each cloud in order to save the file temporary
+        # wait for all acks to come in -> join all listen threads
+        # ---> all clouds have successfully saved the file temporary
+        #
+        # Start listen to ACK wether commit was successfull (copy temporary file to actual file)
+        # send out the commit message via etcd
+        # wait for all acks to come in -> join all listen threads
+        # ---> all clouds have sucessfully copied the temp file to the actual file
+        #
+        # Save own file now and return 200
     response = "200"
     if not storageinterface.upload_from_text(bucket_id, file_name, content):
         response = "500"
