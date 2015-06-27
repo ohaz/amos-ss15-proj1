@@ -67,6 +67,9 @@ db_listener = EtcdDBListener("/registerUser")
 db_listener.daemon = True
 db_listener.start()
 
+file_listener = EtcdDBListener("/saveFile")
+file_listener.daemon = True
+file_listener.start()
 
 
 import FlaskWebProject.views

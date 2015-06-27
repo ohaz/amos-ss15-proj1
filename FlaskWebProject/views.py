@@ -542,6 +542,28 @@ def rest_upload_from_text(bucket_id, file_name):
             return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
     content = request.json['content']
+    etcd_client = init_etcd_connection()
+    file_string = "saveFile/"+file_name+'/'
+
+    async_ready_queue = Queue()
+    thread_listen_ready_list = []
+    thread_counter_clouds = 0
+    for hoster in cloud_hoster:
+        if cloud_hoster[hoster][1] is not None:
+            hoster_string_ready = "/" + file_string + "ack_" + hoster
+            # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
+            pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
+            pros.daemon = True
+            pros.start()
+            thread_listen_ready_list.append(pros)
+            thread_counter_clouds = thread_counter_clouds + 1
+    try:
+        etcd_client.write(file_string, "", dir=True)
+    except EtcdNotFile:
+        for p in thread_listen_ready_list:
+            p.terminate()
+        error = 'etcd: username is already taken'
+
     response = "200"
     if not storageinterface.upload_from_text(bucket_id, file_name, content):
         response = "500"
