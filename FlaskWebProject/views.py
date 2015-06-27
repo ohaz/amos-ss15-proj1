@@ -15,13 +15,11 @@ import os
 from .forms import LoginForm, RegisterForm
 from .models import User, Userfile, UserUserfile
 from FlaskWebProject import storageinterface
-#import etcd
-import etcd_http_handler
-#from etcd import EtcdNotFile
+import etcd
+from etcd import EtcdNotFile
 from config import etcd_member
 from config import cloud_hoster
 # from etcd import EtcdException
-from config import cloudCounter
 from config import cloudplatform
 from sqlalchemy.orm import sessionmaker, scoped_session
 from multiprocessing import Queue
@@ -52,35 +50,35 @@ class RegexConverter(BaseConverter):
 app.url_map.converters['regex'] = RegexConverter
 
 
-# init etcd connection
 def init_etcd_connection():
-    etcd_client = etcd_http_handler.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
+    etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
     # etcd_client.machines
     return etcd_client
 
 
-def listen_ready_ack(client, user_key):
-    counter = 0
+def listen_ready_ack(client, user_key, platform, queue):
     cloud_hoster_local = cloud_hoster
-    while 1:
-        try:
-            if counter == cloudCounter:
-                break
-            new_item = client.read(user_key, recursive=True, wait=True)
-            # TODO: should be exported to new thread
-            print "######### Listen to Ready ACKs #######"
-            print "New Key: " + new_item['key']
-            print "#####################################"
-            for cloud in cloud_hoster_local:
-                if cloud in new_item["key"] and not cloud_hoster_local[cloud][0]:
-                    counter = counter + 1
-                    cloud_hoster_local[cloud][0] = True
-                    print ">>>listen_ready_ack: counter: " + str(counter)
-                else:
-                    continue
-        except:
-            continue
-    return cloud_hoster_local
+    try:
+        url = "http://"+etcd_member[0]+":4001/v2/keys"+user_key+"?wait=true"
+        print "wait url: " + url
+        unirest.timeout(10)
+        etcd_response = unirest.get(url)
+        new_item = etcd_response.body['node']
+        # TODO: should be exported to new thread
+        print "######### Listen to Ready ACKs from "+platform+" #######"
+        print "New Key: " + new_item['key']
+        print "#####################################"
+        cloud_hoster_local[platform][0] = True
+    # To catch the timeout Exception form unirest when cloud does not answer
+    except Exception,e:
+        cloud_hoster_local[platform][0] = False
+    finally:
+        queue.put(cloud_hoster_local)
+
+
+# call back function for unirest to send request async
+def unirest_callback(response):
+    pass
 
 
 def send_sync_data(host_list, data, rest_interface):
@@ -91,7 +89,7 @@ def send_sync_data(host_list, data, rest_interface):
         if host_list[cloud][0]:
             host_url = "http://"+host_list[cloud][1]+rest_interface
             print "----- host URL: " + host_url + " -----"
-            unirest.post(host_url, headers=header, params=data_json, callback=unirest.callback)  # changed from unirest_callback
+            unirest.post(host_url, headers=header, params=data_json, callback=unirest_callback)
             print "----- posted data to " + host_url + " -----"
     print "----- finished sending data ---------"
 
@@ -136,7 +134,7 @@ def listen_commit_status(client, user_key, queue):
         print "#####################################"
         ret_val = new_item['value']
     # To catch the timeout Exception form unirest when cloud does not answer
-    except Exception, e:
+    except Exception,e:
         ret_val = "0"
     finally:
         queue.put(ret_val)
@@ -254,7 +252,7 @@ def register():
                     thread_counter_clouds = thread_counter_clouds + 1
             try:
                 etcd_client.write(user_string, "", dir=True)
-            except Etcd_NotAFile:  # undefined
+            except EtcdNotFile:
                 for p in thread_listen_ready_list:
                     p.terminate()
                 error = 'etcd: username is already taken'
@@ -672,11 +670,9 @@ def rest_share_file(bucket_id, file_name):
         dbSession.commit()
     return "200"
 
-
 '''
     REST API FOR SYNC DATABASES BETWEEN DIFFERENT CLOUDS
 '''
-
 
 @app.route('/storage/api/v1.0/syncdb/registeruser', methods=['POST'])
 def rest_syncdb_register_user():
