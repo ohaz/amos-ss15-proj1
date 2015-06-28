@@ -1,0 +1,88 @@
+Load Balancing
+==============
+
+== Introduction ==
+
+For the application we wanted useful load balancing, so that we only have one entry point. This entry point is supposed to balance the load to the different clouds. All of this should happen without the user even noticing it.
+To achieve that, we thought about using nginx. Nginx is a reverse proxy, which natively supports load_balancing.
+As an example, we're running the nginx server on aws, but it can be run anywhere (google, azure or even self-hosted).
+
+== Setup and configuration ==
+
+=== AWS Instance ===
+
+We've used a t2.micro instance for demonstration purposes.
+
+* Log in to aws, click on EC2 Dashboard -> Instances -> Launch Instance.
+* Follow the instructions for a Amazon Linux AMI image.
+* ssh into the instance and install nginx (e.g. with "sudo yum install nginx")
+* start the nginx server with "sudo service nginx start"
+* Set up the following two configs, replace placeholders (everything in <>)
+* restart the nginx server with "sudo service nginx restart"
+
+=== Configs ===
+
+./etc/nginx/nginx.conf
++
+---                              
+                                                                                                  
+user  nginx;                                                                                      
+worker_processes  2;                                                                              
+                                                                                                  
+error_log  /var/log/nginx/error.log;                                                              
+#error_log  /var/log/nginx/error.log  notice;                                                     
+#error_log  /var/log/nginx/error.log  info;                                                       
+                                                                                                  
+pid        /var/run/nginx.pid;                                                                    
+                                                                                                  
+                                                                                                  
+events {                                                                                          
+    worker_connections  1024;                                                                     
+}                                                                                                 
+                                                                                                  
+                                                                                                  
+http {                                                                                            
+    include       /etc/nginx/mime.types;                                                          
+    default_type  application/octet-stream;                                                       
+                                                                                                  
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '                     
+                      '$status $body_bytes_sent "$http_referer" '                                 
+                      '"$http_user_agent" "$http_x_forwarded_for"';                               
+                                                                                                  
+    access_log  /var/log/nginx/access.log  main;                                                  
+                                                                                                  
+    sendfile        on;                                                                           
+    tcp_nopush     on;                                                                            
+                                                                                                  
+    #keepalive_timeout  0;                                                                        
+    keepalive_timeout  65;                                                                        
+                                                                                                  
+    gzip  on;                                                                                     
+    gzip_disable "msie6";                                                                         
+                                                                                                  
+    # Load modular configuration files from the /etc/nginx/conf.d directory.                      
+    # See http://nginx.org/en/docs/ngx_core_module.html#include                                   
+    # for more information.                                                                       
+    include /etc/nginx/conf.d/*.conf;                                                             
+                                                                                                  
+    index   index.html index.htm;                                                                 
+}
+---
++
+
+./etc/nginx/conf.d/amos1.conf
++
+---
+upstream amos1 {
+        server <server1>;
+        server <server2>;
+}
+server {
+    listen 80;
+
+    location / {
+        proxy_pass http://amos1;
+    }
+}
+---
++
