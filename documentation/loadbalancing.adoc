@@ -32,7 +32,6 @@ We've used a t2.micro instance for demonstration purposes.
 
 ./etc/nginx/nginx.conf
 
-+
 ----
 
 user  nginx;
@@ -77,11 +76,10 @@ http {
     index   index.html index.htm;
 }
 ----
-+
 
 ./etc/nginx/conf.d/amos1.conf
 
-+
+
 ----
 upstream amos1 {
         server <server1>;
@@ -95,4 +93,3 @@ server {
     }
 }
 ----
-+
