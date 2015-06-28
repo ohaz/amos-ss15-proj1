@@ -4,7 +4,15 @@ Load Balancing
 == Introduction ==
 
 For the application we wanted useful load balancing, so that we only have one entry point. This entry point is supposed to balance the load to the different clouds. All of this should happen without the user even noticing it.
-To achieve that, we thought about using nginx. Nginx is a reverse proxy, which natively supports load_balancing.
+To achieve that, we thought about using nginx. Nginx is a reverse proxy, which natively supports load balancing.
+Nginx supports three different types of load balancing:
+
+* *round-robin* Standard. Requests to the application servers are distributed in a round-robin fashion
+* *least-connected* next request is assigned to the server with the least number of active connections
+* *ip-hash* a hash-function selects the server by hashing the IP of the request
+
+We chose round_robin because it requires the least amount of setup and is also a very good way to do load balancing for connections that are only open for a short amount of time.
+
 As an example, we're running the nginx server on aws, but it can be run anywhere (google, azure or even self-hosted).
 
 == Setup and configuration ==
