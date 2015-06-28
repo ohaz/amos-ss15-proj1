@@ -11,7 +11,7 @@ Nginx supports three different types of load balancing:
 * *least-connected* next request is assigned to the server with the least number of active connections
 * *ip-hash* a hash-function selects the server by hashing the IP of the request
 
-We chose round_robin because it requires the least amount of setup and is also a very good way to do load balancing for connections that are only open for a short amount of time.
+We chose ip-hash because it makes sure that your sessions work. If you get routed to a different server for each request, your sessions might get lost and you may need to do everything all over again.
 
 As an example, we're running the nginx server on aws, but it can be run anywhere (google, azure or even self-hosted).
 
@@ -82,8 +82,9 @@ http {
 
 ----
 upstream amos1 {
-        server <server1>;
-        server <server2>;
+    ip_hash;
+    server <server1>;
+    server <server2>;
 }
 server {
     listen 80;
