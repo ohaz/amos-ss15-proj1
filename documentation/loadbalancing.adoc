@@ -30,6 +30,17 @@ We've used a t2.micro instance for demonstration purposes.
 
 === Configs ===
 
+See <<nginx.conf>> and <<amos1.conf>>
+
+== Azure/nginx compatiblity workaround ==
+
+While working on this, we encountered an issue with azure and nginx. Apparently, when using the "upstream" directive in nginx, nginx reads the URLs given at start, resolves them and then only uses the IP received by resolving the URL. However, azure requires requests to be sent using the URL, not only the IP (probably for their loadbalancer). This caused azure to always throw "404 - WebApp not found" errors.
+We solved this by adding a second "server" keyword and telling it to handle the subdomain azure.<domain>.<tld>. Now, inside the "upstream" part, we told nginx to call the subdomain instead of azure directly. This subdomain now calls azure using proxy_pass, which somehow does not call by IP but always by URL.
+This solved the issue. So, if, for whatever reason, the upstream way does not work directly, just add another server {} part, similar to the azure one, and replace the upstream -> server by the same string you add in server -> server_name.
+
+== Appendix ==
+
+[[nginx.conf]]
 ./etc/nginx/nginx.conf
 
 ----
@@ -77,20 +88,33 @@ http {
 }
 ----
 
+[[amos1.conf]]
 ./etc/nginx/conf.d/amos1.conf
-
 
 ----
 upstream amos1 {
     ip_hash;
-    server <server1>;
-    server <server2>;
+    server azure.<your_domain>;
+    server <awsdomain>;
+    server <googledomain>;
+
 }
 server {
     listen 80;
 
+    server_name <your_domain>;
+
     location / {
         proxy_pass http://amos1;
+    }
+}
+
+server {
+    listen 80;
+    server_name azure.<your_domain>;
+
+    location / {
+        proxy_pass http://<azure_domain>;
     }
 }
 ----
