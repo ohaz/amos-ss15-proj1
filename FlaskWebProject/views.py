@@ -540,13 +540,9 @@ def rest_upload_from_text(bucket_id, file_name):
         useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id, UserUserfile.userfile_id == userfile.id).first()
         if useruserfile is None or useruserfile.permission < 6:
             return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
-    response = "200"
-    content = request.json['content']
-    # cloud sync goes here
-    if not storageinterface.upload_from_text(bucket_id, file_name, content):
-        response = "500"
-    return response
-"""    etcd_client = init_etcd_connection()
+
+"""    content = request.json['content']
+    etcd_client = init_etcd_connection()
     file_string = "saveFile/"+file_name+'/'
 
     async_ready_queue = Queue()
@@ -592,7 +588,11 @@ def rest_upload_from_text(bucket_id, file_name):
         # ---> all clouds have sucessfully copied the temp file to the actual file
         #
         # Save own file now and return 200
-    response = "200" """
+    response = "200"
+"""    
+    if not storageinterface.upload_from_text(bucket_id, file_name, content):
+        response = "500"
+    return response
 
 
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
@@ -720,7 +720,6 @@ def rest_share_file(bucket_id, file_name):
 '''
     REST API FOR SYNC DATABASES BETWEEN DIFFERENT CLOUDS
 '''
-
 
 @app.route('/storage/api/v1.0/syncdb/registeruser', methods=['POST'])
 def rest_syncdb_register_user():
