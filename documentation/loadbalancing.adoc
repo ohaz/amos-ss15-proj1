@@ -35,7 +35,9 @@ See <<nginx.conf>> and <<amos1.conf>>
 == Azure/nginx compatiblity workaround ==
 
 While working on this, we encountered an issue with azure and nginx. Apparently, when using the "upstream" directive in nginx, nginx reads the URLs given at start, resolves them and then only uses the IP received by resolving the URL. However, azure requires requests to be sent using the URL, not only the IP (probably for their loadbalancer). This caused azure to always throw "404 - WebApp not found" errors.
+
 We solved this by adding a second "server" keyword and telling it to handle the subdomain azure.<domain>.<tld>. Now, inside the "upstream" part, we told nginx to call the subdomain instead of azure directly. This subdomain now calls azure using proxy_pass, which somehow does not call by IP but always by URL.
+
 This solved the issue. So, if, for whatever reason, the upstream way does not work directly, just add another server {} part, similar to the azure one, and replace the upstream -> server by the same string you add in server -> server_name.
 
 == Appendix ==
