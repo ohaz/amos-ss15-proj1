@@ -541,7 +541,7 @@ def rest_upload_from_text(bucket_id, file_name):
         if useruserfile is None or useruserfile.permission < 6:
             return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
-"""    content = request.json['content']
+    content = request.json['content']
     etcd_client = init_etcd_connection()
     file_string = "saveFile/"+file_name+'/'
 
@@ -589,7 +589,6 @@ def rest_upload_from_text(bucket_id, file_name):
         #
         # Save own file now and return 200
     response = "200"
-"""    
     if not storageinterface.upload_from_text(bucket_id, file_name, content):
         response = "500"
     return response
