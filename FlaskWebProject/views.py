@@ -253,9 +253,8 @@ def register():
             try:
                 etcd_client.write(user_string, "", dir=True)
             except EtcdNotFile:
-                for p in thread_listen_ready_list:
-                    p.terminate()
-                error = 'etcd: username is already taken'
+                """TODO Threads muessen noch beendet werden"""
+                error = 'username is already taken'
             else:
                 password = hashlib.sha256(
                     salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
@@ -403,12 +402,129 @@ def facebook_authorized(resp):
     session['oauth_token'] = (resp['access_token'], '')
     user_data = facebook.get('/me').data
     user = dbSession.query(User).filter(User.email == user_data['email']).first()
+
     if user is None:
-        new_user = User(email=user_data['email'], username=user_data[
-            'id'], password=" ", sso="facebook")
-        dbSession.add(new_user)
-        dbSession.commit()
-        login_user(new_user)
+
+        etcd_client = init_etcd_connection()
+        user_string = "registerUser/" + user_data['id'] + '/'
+
+        async_ready_queue = Queue()
+        thread_listen_ready_list = []
+        thread_counter_clouds = 0
+        for hoster in cloud_hoster:
+            if cloud_hoster[hoster][1] is not None:
+                hoster_string_ready = "/" + user_string + "ack_" + hoster
+                # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
+                pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
+                pros.daemon = True
+                pros.start()
+                thread_listen_ready_list.append(pros)
+                thread_counter_clouds = thread_counter_clouds + 1
+        try:
+            etcd_client.write(user_string, "", dir=True)
+        except EtcdNotFile:
+            """TODO Threads muessen noch beendet werden"""
+            error = 'username is already taken'
+        else:
+            # wait for all listen_ack processes
+            for p in thread_listen_ready_list:
+                p.join()
+
+            etcd_cloud_hoster = cloud_hoster
+            # evaluate results from queue
+            for i in range(0, thread_counter_clouds):
+                result = async_ready_queue.get()
+                for r in result:
+                    if result[r][0]:
+                        etcd_cloud_hoster[r][0] = True
+
+            print "+++++ registerUser: ack listener finished..."
+
+            data = {
+                'username': user_data['id'],
+                'email': user_data['email'],
+                'password': " ",
+                'sso': 'facebook'
+            }
+
+            async_receive_queue = Queue()
+            thread_listen_receive_list = []
+            thread_counter_clouds = 0
+            for hoster in etcd_cloud_hoster:
+                if etcd_cloud_hoster[hoster][1]:
+                    hoster_string_ready = "/" + user_string + "ack_" + hoster
+                    pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster,
+                                      async_receive_queue)
+                    pros.daemon = True
+                    pros.start()
+                    thread_listen_receive_list.append(pros)
+                    thread_counter_clouds = thread_counter_clouds + 1
+
+            async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
+                                         '/storage/api/v1.0/syncdb/registeruser')
+            async_send_data.daemon = True
+            async_send_data.start()
+            print "+++++ send registration data to clouds"
+
+            # wait for all listen_ack processes
+            for p in thread_listen_receive_list:
+                p.join()
+
+            # evaluate results from queue
+            res_receive_data = 1
+            for i in range(0, thread_counter_clouds):
+                result = async_receive_queue.get()
+                for r in result:
+                    if not result[r][0]:
+                        res_receive_data = -1
+            etcd_client.write('/azure_msg', res_receive_data)
+            print "+++++ result receiving data: " + str(res_receive_data)
+
+            commit_string = user_string + 'commit'
+            if res_receive_data == -1:
+                etcd_client.write(commit_string, 0)
+            else:
+
+                async_written_queue = Queue()
+                thread_listen_written_list = []
+                thread_counter_clouds = 0
+                for hoster in etcd_cloud_hoster:
+                    if etcd_cloud_hoster[hoster][1]:
+                        hoster_string_ready = "/" + user_string + "ack_" + hoster
+                        pros = FuncThread(listen_ack_written_data, etcd_client, hoster_string_ready, hoster,
+                                          async_written_queue)
+                        pros.daemon = True
+                        pros.start()
+                        thread_listen_written_list.append(pros)
+                        thread_counter_clouds = thread_counter_clouds + 1
+
+                etcd_client.write(commit_string, 1)
+                # wait for all listen_ack processes
+                for p in thread_listen_written_list:
+                    p.join()
+
+                # evaluate results from queue
+                res_written_data = 1
+                for i in range(0, thread_counter_clouds):
+                    result = async_written_queue.get()
+                    for r in result:
+                        if not result[r][0]:
+                            res_written_data = -1
+
+                print "+++++ result of written data to db: " + str(res_written_data)
+
+                if res_written_data == -1:
+                    error == '+++++ registration fails, please try it again'
+                else:
+                    print "+++++ sending was successfull"
+
+                    # login new user
+                    dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
+                    user = dbSession_new.query(User).filter(User.username == user_data['id']).first()
+                    print user
+                    login_user(user)
+
+
     else:
         login_user(user)
     return redirect(next_url)
@@ -814,7 +930,7 @@ def rest_syncdb_register_user():
         dbSession.add(user)
         dbSession.commit()
         # create container/bucket for the new registered user
-        storageinterface.create_container(user.get_id())
+        #storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
     return "200"
 
