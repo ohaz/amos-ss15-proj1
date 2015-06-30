@@ -1,5 +1,5 @@
 from oauth2client.client import SignedJwtAssertionCredentials  # localServer
-from oauth2client.appengine import AppAssertionCredentials     # AppEngine
+#from oauth2client.appengine import AppAssertionCredentials     # AppEngine
 from httplib2 import Http
 # For ClientLibrary-API-access
 from apiclient.discovery import build
@@ -35,13 +35,10 @@ def getExceptions():
 def get_service(service_a, version_a, scope, local=False):
     def checkoutCredentials(scope, loc=False):
         credentials = None
-        if local:
-            with open(private_key_file) as f:
-                private_key = f.read()
+        with open(private_key_file) as f:
+            private_key = f.read()
             credentials = SignedJwtAssertionCredentials(
                 client_email_loc, private_key, scope)
-        else:
-            credentials = AppAssertionCredentials(scope)
         return credentials
     credentials = checkoutCredentials(scope, loc=local)
     http_auth = credentials.authorize(Http())
@@ -71,7 +68,7 @@ GS_service = 'storage'
 GS_version = 'v1'
 GS_scope = 'https://www.googleapis.com/auth/devstorage.read_write'
 GS_storage = get_service(GS_service, GS_version, GS_scope, _LOCAL_EXEC_)
-GS_identifier = 'bnr-id-'
+GS_identifier = 'bnr-id-compute-'
 exceptions = tuple(getExceptions())
 
 
