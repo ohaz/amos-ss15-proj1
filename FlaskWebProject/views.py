@@ -689,7 +689,6 @@ def google_authorized(resp):
                     # login new user
                     dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
                     user = dbSession_new.query(User).filter(User.email == user_data['email']).first()
-                    print user
                     login_user(user)
 
 
@@ -1058,7 +1057,7 @@ def rest_syncdb_register_user():
         dbSession.add(user)
         dbSession.commit()
         # create container/bucket for the new registered user
-        #storageinterface.create_container(user.get_id())
+        storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
     return "200"
 
