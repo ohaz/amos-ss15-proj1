@@ -21,30 +21,48 @@ APP_STATIC = os.path.join(APP_ROOT, 'static')
 
 # Regex Handling for URLs
 class RegexConverter(BaseConverter):
+    """
+    An URL Converter for Flask to allow regex in URL paths
+    """
 
     def __init__(self, url_map, *items):
+        """
+        Creates a new RegexConverter
+        :param string url_map: The url to map
+        :param list items: items
+        """
         super(RegexConverter, self).__init__(url_map)
         self.regex = items[0]
 
 app.url_map.converters['regex'] = RegexConverter
 
 
-# Function for LoginManager to get a user with specific id
 @lm.user_loader
 def load_user(id):
+    """
+    Function for LoginManager to get a user with specific id
+
+    :param string/int id: the id of the user to load
+    """
     user = dbSession.query(User).filter(User.id == int(id)).first()
     return user
 
 
 @app.before_request
 def before_request():
+    """
+    This function gets called before each request is handled
+    """
     g.user = current_user
 
 
-## If Request is finished/exception was raised, 
-## at least do this
 @app.teardown_appcontext
 def shutdown_session(exception=None):
+    """
+    Shuts down the database session
+
+    :param Exception exception: Won't get used here
+    """
     dbSession.remove()
 
 
@@ -53,7 +71,11 @@ def shutdown_session(exception=None):
 @login_required
 @auto_logger
 def home():
-    """Renders the home page."""
+    """
+    Renders the home page
+
+    :return file: the rendered template of the index page
+    """
     return render_template(
         'index.html', user_id=current_user.get_id()
     )
@@ -62,7 +84,11 @@ def home():
 @app.route('/login', methods=['GET', 'POST'])
 @auto_logger
 def login():
-    """UserName Password Login"""
+    """
+    UserName Password Login
+
+    :return file: Either the homepage or the loginpage
+    """
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('home'))
     error = None
@@ -86,7 +112,11 @@ def login():
 @app.route('/register', methods=['GET', 'POST'])
 @auto_logger
 def register():
-    """UserName Password Register"""
+    """
+    UserName Password Register
+
+    :return file: either the register page or the homepage
+    """
     if g.user is not None and g.user.is_authenticated():
         return redirect(url_for('home'))
     form = RegisterForm()
@@ -126,12 +156,24 @@ def register():
 @login_required
 @app.route('/<path:filepath1>/<path:filepath2>')
 def static_files(filepath1, filepath2):
+    """
+    Method to work with static files.
+    
+    :param string filepath1: the first part of the URL path
+    :param string filepath2: the second part of the URL path
+    :return file: The static file wanted
+    """
     return send_from_directory(os.path.join(APP_STATIC, 'scripts', filepath1, os.path.dirname(filepath2)),  os.path.basename(filepath2))
 
 
 @app.route('/logout')
 @auto_logger
 def logout():
+    """
+    Logout for user
+
+    :return file: homepage
+    """
     logout_user()
     return redirect(url_for('home'))
 
@@ -144,12 +186,22 @@ OAuth2 Facebook Login
 @app.route('/login_fb', methods=['GET', 'POST'])
 @auto_logger
 def login_fb():
+    """
+    Login via Facebook
+
+    :return: Facebook authorization
+    """
     callback_url = url_for('facebook_authorized', _external=True)
     return facebook.authorize(callback=callback_url)
 
 
 @facebook.tokengetter
 def get_facebook_oauth_token():
+    """
+    Gets the facebook oauth token
+
+    :return: the oauth token
+    """
     return session.get('oauth_token')
 
 
@@ -157,6 +209,12 @@ def get_facebook_oauth_token():
 @facebook.authorized_handler
 @auto_logger
 def facebook_authorized(resp):
+    """
+    Function that gets called by Facebook oauth after a login
+
+    :param resp: the response by facebook
+    :return file: Homepage or fail page
+    """
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
@@ -185,6 +243,11 @@ OAuth2 Google Login
 @app.route('/login_google', methods=['GET', 'POST'])
 @auto_logger
 def login_google():
+    """
+    Google login
+
+    :return: Google authorization
+    """
     # next_url = request.args.get('next') or url_for('home')
     callback_url = url_for('google_authorized', _external=True)
     return google.authorize(callback=callback_url)
@@ -192,6 +255,11 @@ def login_google():
 
 @google.tokengetter
 def get_google_oauth_token():
+    """
+    Get the google oauth token
+
+    :return: the oauth token
+    """
     return session.get('oauth_token')
 
 
@@ -199,6 +267,12 @@ def get_google_oauth_token():
 @google.authorized_handler
 @auto_logger
 def google_authorized(resp):
+    """
+    Function that gets called by Google oauth after a login
+
+    :param resp: the response by google
+    :return file: Homepage or fail page
+    """
     next_url = request.args.get('next') or url_for('home')
     if resp is None:
         # The user likely denied the request
@@ -227,7 +301,12 @@ REST API
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['GET'])
 @auto_logger
 def rest_list_files(bucket_id):
-    """ Lists files in container """
+    """
+    Lists files in container
+
+    :param int bucket_id: The bucket to list
+    :return string: Json object containing the list of files
+    """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
@@ -249,7 +328,12 @@ def rest_list_files(bucket_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>', methods=['DELETE'])
 @auto_logger
 def rest_delete_container(bucket_id):
-    """ Deletes specified container """
+    """
+    Deletes specified container
+
+    :param int bucket_id: The bucket to delete
+    :return file: 200 Page
+    """
     # 1. check if logged in user is owner of bucket
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
@@ -272,8 +356,14 @@ def rest_delete_container(bucket_id):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['GET'])
 @auto_logger
 def rest_download_file_to_text(bucket_id, file_name):
-    """ Returns specified file in container as text """
-    # 1 check if user is auth.
+    """
+    Returns specified file in container as text
+
+    :param int bucket_id: The bucket in which the file is in
+    :param string file_name: The name of the file
+    :return string: The file as a string
+    """
+    # 1 check if user is auth
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
@@ -295,7 +385,13 @@ def rest_download_file_to_text(bucket_id, file_name):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['POST'])
 @auto_logger
 def rest_upload_from_text(bucket_id, file_name):
-    """ Uploads text to new file in container """
+    """
+    Uploads text to new file in container
+
+    :param int bucket_id: The bucket in which the file is in
+    :param string file_name: The name of the file
+    :return file: a status response
+    """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
 
@@ -327,7 +423,13 @@ def rest_upload_from_text(bucket_id, file_name):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['PUT'])
 @auto_logger
 def rest_overwrite_file_from_text(bucket_id, file_name):
-    """ Uploads text to file in container """
+    """
+    Uploads text to file in container
+
+    :param int bucket_id: The bucket in which the file is in
+    :param string file_name: The name of the file
+    :return file: a status response
+    """
     
     # 1 check auth.
     if g.user is None or not g.user.is_authenticated():
@@ -357,7 +459,13 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
 @app.route('/storage/api/v1.0/<int:bucket_id>/<string:file_name>', methods=['DELETE'])
 @auto_logger
 def rest_delete_file(bucket_id, file_name):
-    """ Deletes file in container """
+    """
+    Deletes file in container
+
+    :param int bucket_id: The bucket in which the file is in
+    :param string file_name: The name of the file
+    :return file: a status response
+    """
     # 1 check auth.
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
@@ -389,7 +497,11 @@ def rest_delete_file(bucket_id, file_name):
 @app.route('/storage/api/v1.0/share/read', methods=['GET'])
 @auto_logger
 def rest_share_list_files_read():
-    """ Lists files with permission >0 """
+    """
+    Lists files with permission >0
+
+    :return string: json with all files with permission > 0
+    """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
@@ -409,7 +521,11 @@ def rest_share_list_files_read():
 @app.route('/storage/api/v1.0/share/write', methods=['GET'])
 @auto_logger
 def rest_share_list_files_write():
-    """ Lists files with permission == 2 or 6"""
+    """
+    Lists files with permission == 2 or 6
+
+    :return string: json with all files with permission 2 or 6
+    """
     if g.user is None or not g.user.is_authenticated():
         return "401"  # Unauthorized
     
@@ -430,7 +546,13 @@ def rest_share_list_files_write():
 @app.route('/storage/api/v1.0/share/<int:bucket_id>/<string:file_name>', methods=['POST'])
 @auto_logger
 def rest_share_file(bucket_id, file_name):
-    """ Sets permission for file in db """
+    """
+    Sets permission for file in db
+
+    :param int bucket_id: The bucket in which the file is in
+    :param string file_name: The name of the file
+    :return file: a status response
+    """
     username = request.json['username']
     permission = request.json['permission']
 
