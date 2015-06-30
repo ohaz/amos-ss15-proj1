@@ -569,6 +569,7 @@ def google_authorized(resp):
     else:
         login_user(user)
     return redirect(next_url)
+    
     """
     if user is None:
 
@@ -590,7 +591,7 @@ def google_authorized(resp):
         try:
             etcd_client.write(user_string, "", dir=True)
         except EtcdNotFile:
-            """TODO Threads muessen noch beendet werden"""
+            #TODO Threads muessen noch beendet werden
             error = 'username is already taken'
         else:
             # wait for all listen_ack processes
