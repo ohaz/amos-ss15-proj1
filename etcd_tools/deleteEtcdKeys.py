@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import etcd
 from config import etcd_member
 
@@ -29,4 +31,8 @@ def deleteChildren(client, directory, base_directory):
         client.delete(directory.key, dir=True)
         print "deleted directory with key: " + directory.key
 
-deleteChildren(client, directory, directory.key)
+
+if directory._children == []:
+    print "Tree is empty"
+else:
+    deleteChildren(client, directory, directory.key)
