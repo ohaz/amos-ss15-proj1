@@ -53,3 +53,4 @@ app.db
 brutto-netto-rechner.pem
 /node_modules/
 .idea/
+cloud-deployer/cloud_specific_files/azure/deploy_config.py
