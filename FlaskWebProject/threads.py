@@ -5,10 +5,7 @@ import etcd
 from etcd import EtcdKeyNotFound
 from etcd import EtcdException
 from config import cloudplatform
-from config import cloudCounter
 from config import cloud_hoster
-
-
 
 class EtcdDBListener(threading.Thread):
 
