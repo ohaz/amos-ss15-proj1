@@ -18,17 +18,23 @@ s3_conn = S3Connection(AWS_S3_ACCESS_KEY, AWS_S3_ACCESS_SECRET)
 #
 
 def create_container(bucket):
+    """
+    Method to create a new bucket
+
+    :param string bucket: the name of the bucket
+    :return boolean: true if success
+    """
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     try:
         bucket = s3_conn.create_bucket(bucketname)
     except S3CreateError:
-        print "error by creating bucket..."
+        print ("error by creating bucket...")
         return ret_val
     if bucket is not None:
         ret_val = True
-        print "bucket successfully created..."
+        print ("bucket successfully created...")
     return ret_val
 
 
@@ -37,6 +43,12 @@ def create_container(bucket):
 #
 
 def container_exists(bucket):
+    """
+    Method to determine if a bucket exists
+
+    :param string bucket: the name of the bucket
+    :return boolean: true if exists
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     return bucketname in [x.name for x in s3_conn.get_all_buckets()]
@@ -44,6 +56,12 @@ def container_exists(bucket):
 
 # return a list with the names of all files in the bucket
 def list_files(bucket):
+    """
+    Method to list all files in a bucket
+
+    :param string bucket: the name of the bucket
+    :return list: list of all files
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
@@ -52,6 +70,13 @@ def list_files(bucket):
 
 
 def file_exists(bucket, filename):
+    """
+    Method to determine if a file exists in a bucket
+
+    :param string bucket: the name of the bucket
+    :param string filename: name of the file
+    :return boolean: true if exists
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
@@ -63,6 +88,13 @@ def file_exists(bucket, filename):
 
 
 def file_change_permissions(bucket, filename, permission):
+    """
+    Method to change the permissions of a specific file
+
+    :param string bucket: the name of the bucket
+    :param string filename: name of the file
+    :param permission: permission to set the file to
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
@@ -76,6 +108,14 @@ def file_change_permissions(bucket, filename, permission):
 
 # create a file with the specific filename and upload the string into
 def upload_from_text(bucket, filename, text):
+    """
+    Method to upload a file from text
+
+    :param string bucket: the name of the bucket
+    :param string filename: name of the file
+    :param string text: the text to save in the file
+    :return boolean: true if success
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_s3 = s3_conn.get_bucket(bucketname)
@@ -90,6 +130,13 @@ def upload_from_text(bucket, filename, text):
 
 
 def upload_from_path(bucket, path):
+    """
+    Method to upload a file from a path
+
+    :param string bucket: the name of the bucket
+    :param string path: path of the file
+    :return boolean: true if success
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     filename = ntpath.basename(path)
@@ -109,6 +156,14 @@ def upload_from_path(bucket, path):
 
 # download file to path from S3
 def download_file_to_path(bucket, filename, path):
+    """
+    Method to download a file to a path
+
+    :param string bucket: the name of the bucket
+    :param string filename: the name of the file
+    :param string path: path of the file
+    :return boolean: true if success
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_s3 = s3_conn.get_bucket(bucketname)
@@ -125,6 +180,13 @@ def download_file_to_path(bucket, filename, path):
 # it`s only accessable when the permissons are set to public.
 # default permissions are only to the user not public
 def get_download_url(bucket, filename):
+    """
+    Method to get the download url of a file
+
+    :param string bucket: the name of the bucket
+    :param string filename: the name of the file
+    :return string: URL of the file
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_content = s3_conn.get_bucket(bucketname)
@@ -137,6 +199,13 @@ def get_download_url(bucket, filename):
 
 
 def download_file_to_text(bucket, filename):
+    """
+    Method to download a file to text
+
+    :param string bucket: the name of the bucket
+    :param string filename: the name of the file
+    :return string: the content of the file
+    """
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
     bucket_s3 = s3_conn.get_bucket(bucketname)
@@ -155,6 +224,13 @@ def download_file_to_text(bucket, filename):
 
 # delete file from bucket, existing from file will be checked
 def delete_file(bucket, filename):
+    """
+    Method to delete a file
+
+    :param string bucket: the name of the bucket
+    :param string filename: the name of the file
+    :return boolean: true if success
+    """
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()
@@ -170,6 +246,12 @@ def delete_file(bucket, filename):
 
 
 def delete_container(bucket):
+    """
+    Method to delete a container
+
+    :param string bucket: the name of the bucket
+    :return boolean: true if success
+    """
     ret_val = False
     bucketname = AWS_S3_ACCESS_KEY + "_" + str(bucket)
     bucketname = bucketname.lower()

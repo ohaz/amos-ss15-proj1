@@ -1,5 +1,11 @@
 """
-The flask application package.
+The FlaskWebProject.
+Handles all incomming connections.
+
+.. module:: FlaskWebProject
+    :platform: Unix, Windows
+    :synopsis: Module containing everything needed for the flaskweb application to request_token_url
+
 """
 import json
 
@@ -69,6 +75,16 @@ google = oauth.remote_app(
 )
 
 def log_format(text, icon='ghost', attachment=None, username=None, channel='#logging'):
+    """
+    Method to format a log string in the correct way, so that slack can read it.
+
+    :param string text: The text to send in the log message.
+    :param string icon: The slack icon to use.
+    :param string attachment: A slack attachment
+    :param string username: The username to send the message as.
+    :param string channel: The channel to log to.
+    :return string: json string containing a full slack message
+    """
     if username is None:
         username = cloudplatform
     # Attachment has to be a tuple of level and text (e.g. ("danger", "Critical Error: Import not found"))
@@ -93,6 +109,13 @@ def log_format(text, icon='ghost', attachment=None, username=None, channel='#log
             "icon": icon, "username": username})
 
 def auto_logger(f):
+    """
+    Decorator that adds auto-logging features to functions.
+    Automatically catches any exceptions and sends them to defined endpoints.
+
+    :param function f: The function to decorate
+    :return function: the function that decorates
+    """
     # Works as a decorator for functions. Automatically sends log messages on exceptions
     @wraps(f)
     def decorated(*args, **kwargs):

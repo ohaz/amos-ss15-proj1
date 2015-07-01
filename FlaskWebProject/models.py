@@ -6,6 +6,10 @@ Base = declarative_base()
 
 
 class User(Base):
+    """
+    Model for a user. Contains their login data.
+    """
+
     # create with:
     # User("hanz","hanzmail","hanzpw","sso")
     # get with:
@@ -21,31 +25,67 @@ class User(Base):
     userfiles = association_proxy('user_userfiles', 'userfile')
 
     def __init__(self, username, email, password, sso):
+        """
+        Create a new user.
+
+        :param string username: The username of the user to create
+        :param string email: The email of the user to create
+        :param string password: The password of the user to create
+        :param string sso: The SSO login of the user to create
+        """
         self.username = username
         self.email = email
         self.password = password
         self.sso = sso
 
     def is_authenticated(self):
+        """
+        Determines if the user is authenticated. Basically a dummy (for decorators)
+
+        :return boolean: always returns True
+        """
         return True
 
     def is_active(self):
+        """
+        Determines if the user is active. Dummy
+
+        :return boolean: always returns True
+        """
         return True
 
     def is_anonymous(self):
+        """
+        Determines if the user is anonymous. Dummy
+
+        :return boolean: always returns True
+        """
         return False
 
     def get_id(self):
+        """
+        Determines the id of the user
+
+        :return string: The id of the user as a string
+        """
         try:
             return unicode(self.id)  # python 2
         except NameError:
             return str(self.id)  # python 3
 
     def __repr__(self):
+        """
+        Representation string of a user object.
+
+        :return string: String representation of a user
+        """
         return '<User %r>' % (self.username)
 
 
 class UserUserfile(Base):
+    """
+    Relation between a user and a file
+    """
     # create with:
     # UserUserfile(Userfile("folder","file"), user, permission=7)
     # check with:
@@ -65,12 +105,22 @@ class UserUserfile(Base):
     userfile = db.relationship("Userfile")
 
     def __init__(self, userfile=None, user=None, permission=None):
+        """
+        Create a new releation between a user and a file
+
+        :param Userfile userfile: The file for the relationship
+        :param User user: the user for the relationship
+        :param string permission: the permissions for the user
+        """
         self.user = user
         self.userfile = userfile
         self.permission = permission
 
 
 class Userfile(Base):
+    """
+    An uploaded file
+    """
     # create with:
     # Userfile("hanzfolder","hanzfile")
     # get with:
@@ -81,16 +131,32 @@ class Userfile(Base):
     name = db.Column('name', db.String(120))
 
     def __init__(self, folder, name):
+        """
+        Create a new userfile
+
+        :param string folder: The folder in which the file is located
+        :param string name: The name of the file
+        """
         self.folder = folder
         self.name = name
 
     def get_id(self):
+        """
+        Determines the id of the object
+
+        :return string: The id of the file
+        """
         try:
             return unicode(self.id)  # python 2
         except NameError:
             return str(self.id)  # python 3
 
     def __repr__(self):
+        """
+        Representation string of a file
+
+        :return string: String representation of a file
+        """
         return '<Userfile %r>' % (self.name)
 
 
