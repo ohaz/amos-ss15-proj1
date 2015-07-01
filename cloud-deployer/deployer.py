@@ -141,6 +141,7 @@ def main():
     # Checks for the subscripts by trying to import them
     # Also asks the scripts if they have all requirements they need
     print(' > Checking deployment sub-scripts')
+
     try:
         from cloud_specific_scripts import azure
         _possible_clouds['azure'][0] = azure.all_requirements_available()

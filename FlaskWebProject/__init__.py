@@ -30,6 +30,9 @@ try:
 except:
     LOG_LINE_NO = True
 
+from flask import g
+from threading import Thread
+from FlaskWebProject.threads import EtcdDBListener
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -40,11 +43,12 @@ lm.login_view = 'login'
 oauth = OAuth()
 
 # session for connection to database
-dbEngine = create_engine(SQLALCHEMY_DATABASE_URI,pool_recycle=3600)
+dbEngine = create_engine(SQLALCHEMY_DATABASE_URI, pool_recycle=3600)
 
-# ATT TODO everywhere in code, try to replace autoflush, with manual one? --good approach?
-dbSession = scoped_session(sessionmaker(autocommit=False, bind=dbEngine)) 
-#dbSession = Session()  # check if it is good to create the session with init
+# ATT TODO everywhere in code, try to replace autoflush, with manual one?
+# --good approach?
+dbSession = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
+# dbSession = Session()  # check if it is good to create the session with init
 
 # Facebook OAuth2 Login Credentials
 facebook = oauth.remote_app(
@@ -74,6 +78,7 @@ google = oauth.remote_app(
     consumer_secret=sso_google_consumer_secret,
 )
 
+
 def log_format(text, icon='ghost', attachment=None, username=None, channel='#logging'):
     """
     Method to format a log string in the correct way, so that slack can read it.
@@ -87,26 +92,28 @@ def log_format(text, icon='ghost', attachment=None, username=None, channel='#log
     """
     if username is None:
         username = cloudplatform
-    # Attachment has to be a tuple of level and text (e.g. ("danger", "Critical Error: Import not found"))
+    # Attachment has to be a tuple of level and text (e.g. ("danger",
+    # "Critical Error: Import not found"))
     if attachment:
         return json.dumps({"icon_emoji": icon, "icon": icon, "username": username,
-            "attachments": [
-            {
-                "fallback": text,
-                "pretext": text,
-                "color": attachment[0],
-                "fields": [
-                {
-                    "title": "Attachment",
-                    "value": attachment[1],
-                    "short": False
-                }
-                ]
-            }
-            ]})
+                           "attachments": [
+                               {
+                                   "fallback": text,
+                                   "pretext": text,
+                                   "color": attachment[0],
+                                   "fields": [
+                                       {
+                                           "title": "Attachment",
+                                           "value": attachment[1],
+                                           "short": False
+                                       }
+                                   ]
+                               }
+                           ]})
     else:
-        return json.dumps({"icon_emoji": icon, "text": text, 
-            "icon": icon, "username": username})
+        return json.dumps({"icon_emoji": icon, "text": text,
+                           "icon": icon, "username": username})
+
 
 def auto_logger(f):
     """
@@ -116,19 +123,22 @@ def auto_logger(f):
     :param function f: The function to decorate
     :return function: the function that decorates
     """
-    # Works as a decorator for functions. Automatically sends log messages on exceptions
+    # Works as a decorator for functions. Automatically sends log messages on
+    # exceptions
     @wraps(f)
     def decorated(*args, **kwargs):
         try:
             return f(*args, **kwargs)
         except Exception as e:
             # Log the error to all attached handlers and then raise the error again
-            # for flask to further handle it (this way we can still add custom 500 pages)
+            # for flask to further handle it (this way we can still add custom
+            # 500 pages)
             if LOG_LINE_NO:
-                logger.error(log_format("Exception in ["+str(f.__name__)+" l: "
-                    +str(sys.exc_info()[2].tb_next.tb_lineno)+"]: "+str(e)))
+                logger.error(log_format("Exception in [" + str(f.__name__) + " l: "
+                                        + str(sys.exc_info()[2].tb_next.tb_lineno) + "]: " + str(e)))
             else:
-                logger.error(log_format("Exception in ["+str(f.__name__)+"]: "+str(e)))
+                logger.error(
+                    log_format("Exception in [" + str(f.__name__) + "]: " + str(e)))
             raise e
     return decorated
 
@@ -146,7 +156,7 @@ if not app.debug:
         if MAIL_USERNAME and MAIL_PASSWORD:
             credentials = (MAIL_USERNAME, MAIL_PASSWORD)
         mail_handler = SMTPHandler((MAIL_SERVER, MAIL_PORT),
-                                   MAIL_USERNAME+'@' + MAIL_SERVER, ADMINS,
+                                   MAIL_USERNAME + '@' + MAIL_SERVER, ADMINS,
                                    cloudplatform + ' failure', credentials)
         mail_handler.setLevel(logging.ERROR)
 
@@ -168,6 +178,15 @@ if not app.debug:
             logger.addHandler(mail_handler)
         if slack_handler:
             logger.addHandler(slack_handler)
+
+db_listener = EtcdDBListener("/registerUser")
+db_listener.daemon = True
+db_listener.start()
+
+file_listener = EtcdDBListener("/saveFile")
+file_listener.daemon = True
+file_listener.start()
+
 
 import FlaskWebProject.views
 import FlaskWebProject.models
