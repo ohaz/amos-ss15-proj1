@@ -57,10 +57,22 @@
                         {{ form.confirm(placeholder="Confirm Password", class="form-control") }}
                     </div>
                     <span class="help-block">
+
+                    <!-- Check for signup errors -->
                     {% if error %} {{ error }} {% endif %}
+
+                    <!-- Check for password mismatch errors -->
                     {% if form.confirm.errors %}
                         <ul class=errors>
                             {% for error in form.confirm.errors %}
+                                {{ error }}
+                            {% endfor %}
+                         </ul>
+                     {% endif %}
+                     <!-- Check for invalid email addresses -->
+                    {% if form.email.errors %}
+                        <ul class=errors>
+                            {% for error in form.email.errors %}
                                 {{ error }}
                             {% endfor %}
                          </ul>
