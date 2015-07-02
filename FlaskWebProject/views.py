@@ -982,7 +982,7 @@ def rest_share_file(bucket_id, file_name):
 
     rest_url = '/storage/api/v1.0/syncdb/sharefilepermission'
 
-    etcd_string = 'setPermission/'+ username + '_' + filename + '/'
+    etcd_string = 'setPermission/'+ username + '_' + file_name + '/'
 
     res_db_sync = db_cloud_sync(etcd_string, rest_url, data)
 
@@ -1067,7 +1067,7 @@ def rest_syncdb_register_user():
 def rest_syncdb_share_file_permission():
 
     etcd_client = init_etcd_connection()
-    commit_key = 'setPermission/'+ username + '_' + filename + '/' + 'commit'
+    commit_key = 'setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'commit'
 
     async_commit_queue = Queue()
     async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
@@ -1075,7 +1075,7 @@ def rest_syncdb_share_file_permission():
     async_commit_data.start()
 
 
-    key_path = 'setPermission/'+ username + '_' + filename + '/' + 'ack_' + cloudplatform
+    key_path = 'setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'ack_' + cloudplatform
 
     print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
     print "key: " + key_path
