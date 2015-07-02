@@ -969,6 +969,27 @@ def rest_share_file(bucket_id, file_name):
     if user is None:
         return "404"  # Not found
     # 5. check if permission allready exists in table UserUserfile
+
+    data = {
+        'user_id': user.id,
+        'userfile_id': userfile.id,
+        'permission': permission,
+        'bucket_id': bucket_id,
+        'file_name': file_name,
+        'username': username
+    }
+
+    rest_url = '/storage/api/v1.0/syncdb/sharefilepermission'
+
+    etcd_string = 'setPermission/'+ username + '_' + filename + '/'
+
+    res_db_sync = db_cloud_sync(etcd_string, rest_url, data)
+
+    etcd_client = init_etcd_connection()
+
+
+
+    """
     useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
                                                         UserUserfile.userfile_id == userfile.id).first()
     if useruserfile is not None:
@@ -980,6 +1001,7 @@ def rest_share_file(bucket_id, file_name):
         useruserfile = UserUserfile(userfile, user, permission)
         dbSession.add(useruserfile)
         dbSession.commit()
+    """
     return "200"
 
 
@@ -1038,6 +1060,46 @@ def rest_syncdb_register_user():
         # create container/bucket for the new registered user
         #storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
+    return "200"
+
+@app.route('/storage/api/v1.0/syncdb/sharefilepermission', methods=['POST'])
+def rest_syncdb_share_file_permission():
+
+    etcd_client = init_etcd_connection()
+    commit_key = 'setPermission/'+ username + '_' + filename + '/' + 'commit'
+
+    async_commit_queue = Queue()
+    async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
+    async_commit_data.daemon = True
+    async_commit_data.start()
+
+
+    key_path = 'setPermission/'+ username + '_' + filename + '/' + 'ack_' + cloudplatform
+
+    print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
+    print "key: " + key_path
+    etcd_client.write(key_path, 2)
+    print ">>>>> REST API: wrote to etcd..."
+    print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
+
+    async_commit_data.join()
+    commit_res = async_commit_queue.get()
+    print ">>>> commit result: " + commit_res
+
+    if commit_res == "1":
+        useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == request.json['user_id'],
+                                                        UserUserfile.userfile_id == request.json['userfile_id']).first()
+        if useruserfile is not None:
+            useruserfile.permission = permission
+            dbSession.commit()
+        else:
+            userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
+            user = dbSession.query(User).filter(User.username == request.json['username']).first()
+            # 5. set permission in table UserUserfile
+            print("set useruserfile")
+            useruserfile = UserUserfile(userfile, user, request.json['permission'])
+            dbSession.add(useruserfile)
+            dbSession.commit()
     return "200"
 
 
