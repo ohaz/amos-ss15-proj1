@@ -1101,6 +1101,7 @@ def rest_syncdb_share_file_permission():
             useruserfile = UserUserfile(userfile, user, request.json['permission'])
             dbSession.add(useruserfile)
             dbSession.commit()
+        etcd_client.write(user_key, 3)
     return "200"
 
 
