@@ -693,10 +693,12 @@ def rest_download_file_to_text(bucket_id, file_name):
         return "404"  # Not found
     if int(userfile.UserUserfile.permission) < 4:
         return "403"
+
     value = storageinterface.download_file_to_text(bucket_id, file_name)
+
     if value is None:  # FIXME wat do in this case?
         print('Database out of synch with storage!')
-        return "404"
+        value = ""
     return value
 
 
