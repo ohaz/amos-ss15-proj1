@@ -59,6 +59,7 @@ class RegexConverter(BaseConverter):
 
 app.url_map.converters['regex'] = RegexConverter
 
+
 def db_cloud_sync(key_path, rest_url, data):
     etcd_client = init_etcd_connection()
 
@@ -69,19 +70,22 @@ def db_cloud_sync(key_path, rest_url, data):
         if cloud_hoster[hoster][1] is not None:
             hoster_string_ready = "/" + key_path + "ack_" + hoster
             # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
+            print "db_cloud_sync: for hoster: " + hoster + " hoster_string_ready: " + hoster_string_ready
             pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
             pros.daemon = True
             pros.start()
             thread_listen_ready_list.append(pros)
             thread_counter_clouds = thread_counter_clouds + 1
     try:
+        print "db_cloud_sync: try write path: " + key_path
         etcd_client.write(key_path, "", dir=True)
     except EtcdNotFile:
         # TODO Threads muessen noch beendet werden
+        print "db_cloud_sync: except EtcdNotFile!"
         res_written_data = -1
         return res_written_data
     else:
-
+        print "db_cloud_sync: wait for all listen_ack processes...."
         # wait for all listen_ack processes
         for p in thread_listen_ready_list:
             p.join()
@@ -94,14 +98,16 @@ def db_cloud_sync(key_path, rest_url, data):
                 if result[r][0]:
                     etcd_cloud_hoster[r][0] = True
 
-        print "+++++ registerUser: ack listener finished..."
+        print "db_cloud_sync: ack listener finished..."
 
         async_receive_queue = Queue()
         thread_listen_receive_list = []
         thread_counter_clouds = 0
         for hoster in etcd_cloud_hoster:
-            if etcd_cloud_hoster[hoster][1]:
+            print " db_cloud_sync: for hoster: " + hoster
+            if etcd_cloud_hoster[hoster][1]:  # what does this?
                 hoster_string_ready = "/" + key_path + "ack_" + hoster
+                print "  db_cloud_sync: for hoster: hoster_string_ready:" + hoster_string_ready
                 pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
                                   async_receive_queue, "2")
                 pros.daemon = True
@@ -112,7 +118,7 @@ def db_cloud_sync(key_path, rest_url, data):
         async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data, rest_url)
         async_send_data.daemon = True
         async_send_data.start()
-        print "+++++ send registration data to clouds"
+        print "db_cloud_sync: send registration data to clouds"
 
         # wait for all listen_ack processes
         for p in thread_listen_receive_list:
@@ -126,12 +132,12 @@ def db_cloud_sync(key_path, rest_url, data):
                 if not result[r][0]:
                     res_receive_data = -1
 
-        print "+++++ result receiving data: " + str(res_receive_data)
+        print "db_cloud_sync: result receiving data: " + str(res_receive_data)
 
         commit_string = key_path + 'commit'
         if res_receive_data == -1:
             etcd_client.write(commit_string, 0)
-            #return that writting was not successfull
+            # return that writting was not successfull
             res_written_data = -1
         else:
 
@@ -161,7 +167,7 @@ def db_cloud_sync(key_path, rest_url, data):
                     if not result[r][0]:
                         res_written_data = -1
 
-            print "+++++ result of written data to db: " + str(res_written_data)
+            print "db_cloud_sync: result of written data to db: " + str(res_written_data)
     return res_written_data
 
 
@@ -175,17 +181,16 @@ def listen_ready_ack(client, user_key, platform, queue):
     cloud_hoster_local = cloud_hoster
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
+        print "listen_ready_ack: wait url: " + url
         unirest.timeout(10)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Ready ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "#####################################"
+        print "listen_ready_ack: platform: " + platform + " New Key: " + new_item['key']
         cloud_hoster_local[platform][0] = True
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ready_ack: Timeout exception platform: " + platform
         cloud_hoster_local[platform][0] = False
     finally:
         queue.put(cloud_hoster_local)
@@ -197,16 +202,14 @@ def unirest_callback(response):
 
 
 def send_sync_data(host_list, data, rest_interface):
-    print "----- Begin to send data to the clouds -----"
+    print "send_sync_data: start sync data.."
     data_json = json.dumps(data)
     header = {'Content-Type': 'application/json'}
     for cloud in host_list:
         if host_list[cloud][0]:
             host_url = "http://" + host_list[cloud][1] + rest_interface
-            print "----- host URL: " + host_url + " -----"
+            print "send_sync_data: host URL: " + host_url + " "
             unirest.post(host_url, headers=header, params=data_json, callback=unirest_callback)
-            print "----- posted data to " + host_url + " -----"
-    print "----- finished sending data ---------"
 
 
 def listen_ack_receiving_data(client, user_key, platform, queue):
@@ -214,99 +217,86 @@ def listen_ack_receiving_data(client, user_key, platform, queue):
     receive_result = {platform: [False]}
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
+        print "listen_ack_receiving_data: wait url: " + url
         unirest.timeout(10)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Receive ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_ack_receiving_data: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == "2":
             receive_result[platform][0] = True
         else:
             receive_result[platform][0] = False
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ack_receiving_data: Timeout exception platform: " + platform
         receive_result[platform][0] = False
     finally:
         queue.put(receive_result)
+
 
 def listen_ack_written_data(client, user_key, platform, queue):
     # counter = 0
     receive_result = {platform: [False]}
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
+        print "listen_ack_written_data: wait url: " + url
         unirest.timeout(10)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Written ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_ack_written_data: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == "3":
             receive_result[platform][0] = True
         else:
             receive_result[platform][0] = False
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ack_written_data: Timeout exception platform: " + platform
         receive_result[platform][0] = False
     finally:
         queue.put(receive_result)
 
 
-
 def listen_ack_etcd(client, user_key, platform, queue, ack_num):
+    print "listen_ack_etcd: listen for ack_num: " + ack_num + " from platform: " + platform
     # counter = 0
     receive_result = {platform: [False]}
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
+        print "listen_ack_etcd: wait url: " + url
         unirest.timeout(10)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_ack_etcd: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == ack_num:
             receive_result[platform][0] = True
         else:
             receive_result[platform][0] = False
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ack_etcd: Timeout exception platform: " + platform
         receive_result[platform][0] = False
     finally:
         queue.put(receive_result)
 
 
-
 def listen_commit_status(client, user_key, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print url
-        print "wait url: " + url
         unirest.timeout(10)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Commit ACK #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_commit_status: url: " + url + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         ret_val = new_item['value']
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_commit_status: Timeout exception: " + url
         ret_val = "0"
     finally:
         queue.put(ret_val)
-
-
-
 
 
 # Function for LoginManager to get a user with specific id
@@ -421,6 +411,7 @@ def register():
 
             # call synchronization between cloud dbs
             res_db_sync = db_cloud_sync(user_string, rest_url, data)
+            print "register: res_db_sync: " + str(res_db_sync)
 
             if res_db_sync == -1:
                 error == '+++++ registration fails, please try it again'
@@ -525,7 +516,8 @@ def facebook_authorized(resp):
         res_db_sync = db_cloud_sync(user_string, rest_url, data)
 
         if res_db_sync == -1:
-            error == '+++++ registration fails, please try it again'
+            error = '+++++ registration fails, please try it again'
+            print error
         else:
             print "+++++ sending was successfull"
             # login new user
@@ -601,11 +593,11 @@ def google_authorized(resp):
             'sso': 'google'
         }
 
-        res_db_sync = db_cloud_sync(user_string, rest_url, data)        
-
+        res_db_sync = db_cloud_sync(user_string, rest_url, data)
 
         if res_db_sync == -1:
-            error == '+++++ registration fails, please try it again'
+            error = '+++++ registration fails, please try it again'
+            print error
         else:
             print "+++++ sending was successfull"
 
@@ -1062,6 +1054,7 @@ def rest_syncdb_register_user():
         #storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
     return "200"
+
 
 @app.route('/storage/api/v1.0/syncdb/sharefilepermission', methods=['POST'])
 def rest_syncdb_share_file_permission():
