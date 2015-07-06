@@ -736,8 +736,8 @@ def rest_upload_from_text(bucket_id, file_name):
 
     content = request.json['content']
     etcd_client = init_etcd_connection()
-    #file_string = "saveFile/" + str(user.id) + '_' + file_name + '/'
-    file_string = "saveFile/" + file_name + '/'
+    file_string = "saveFile/" + str(user.id) + '_' + file_name + '/'
+    # file_string = "saveFile/" + file_name + '/' # 150706 lars - zur besseren Unterscheidung der Dateien.
 
     async_ready_queue = Queue()
     thread_listen_ready_list = []
