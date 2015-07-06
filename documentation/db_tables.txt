@@ -1,3 +1,7 @@
+DROP TABLE `user_userfile`;
+DROP TABLE `user`;
+DROP TABLE `userfile`;
+
 CREATE TABLE `user` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `username` varchar(64) DEFAULT NULL,
