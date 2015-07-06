@@ -60,6 +60,7 @@ class RegexConverter(BaseConverter):
 app.url_map.converters['regex'] = RegexConverter
 
 
+@auto_logger
 def db_cloud_sync(key_path, rest_url, data):
     etcd_client = init_etcd_connection()
 
@@ -945,6 +946,7 @@ def rest_share_file(bucket_id, file_name):
     :param string file_name: The name of the file
     :return file: a status response
     """
+    print "rest_share_file: ..."
     username = request.json['username']
     permission = request.json['permission']
 
@@ -1102,6 +1104,7 @@ def rest_syncdb_share_file_permission():
 
 @app.route('/storage/api/v1.0/syncfile/savefile/<int:bucket_id>/<string:file_name>', methods=['POST'])
 def rest_syncfile_save_file(bucket_id, file_name):
+    print "rest_syncfile_save_file: ..."
     if request.method == 'POST':
         # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
         userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
