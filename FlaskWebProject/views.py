@@ -790,7 +790,7 @@ def rest_upload_from_text(bucket_id, file_name):
                 thread_counter_clouds = thread_counter_clouds + 1
 
         async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                     '/storage/api/v1.0/syncfile/savefile/' + str(bucket_id) + '/' + file_name)
+                                     '/storage/api/v1.0/syncfile/savefile/' + current_user.email + '/' + file_name)
         async_send_data.daemon = True
         async_send_data.start()
         print "+++++ send save file data to clouds"
@@ -1102,17 +1102,18 @@ def rest_syncdb_share_file_permission():
     return "200"
 
 
-@app.route('/storage/api/v1.0/syncfile/savefile/<int:bucket_id>/<string:file_name>', methods=['POST'])
-def rest_syncfile_save_file(bucket_id, file_name):
+@app.route('/storage/api/v1.0/syncfile/savefile/<string:user_email>/<string:file_name>', methods=['POST'])
+def rest_syncfile_save_file(user_email, file_name):
     print "rest_syncfile_save_file: ..."
     if request.method == 'POST':
         # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
         userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
-        user = dbSession.query(User).filter(User.id == bucket_id).first()
+        user = dbSession.query(User).filter(User.email == user_email).first()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user.get_id())
         if userfile is None:
             if user is None:
                 return "403"  # Forbidden
-            userfile = Userfile(bucket_id, file_name)
+            userfile = Userfile(user.get_id(), file_name)
             useruserfile = UserUserfile(userfile, user, 6)
             dbSession.add(userfile)
             dbSession.add(useruserfile)
@@ -1130,7 +1131,8 @@ def rest_syncfile_save_file(bucket_id, file_name):
         print("-------------------------------------------------------------")
         print("Received an external POST in order to save following file")
         print("content: " + content)
-        print("bucketid: " + str(bucket_id))
+        print("user email: " + user_email)
+        print("bucketid: " + str(user.get_id()))
         print("file_name: " + file_name)
         print("-------------------------------------------------------------")
 
@@ -1138,6 +1140,6 @@ def rest_syncfile_save_file(bucket_id, file_name):
         # TODO send ACK back
 
         response = "200"
-        if not storageinterface.upload_from_text(bucket_id, file_name, content):
+        if not storageinterface.upload_from_text(user.id, file_name, content):
             response = "500"
         return response
