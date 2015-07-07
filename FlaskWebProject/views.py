@@ -1055,7 +1055,7 @@ def rest_syncdb_register_user():
         dbSession.add(user)
         dbSession.commit()
         # create container/bucket for the new registered user
-        #storageinterface.create_container(user.get_id())
+        storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
     return "200"
 
