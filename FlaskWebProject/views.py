@@ -794,11 +794,19 @@ def rest_upload_from_text(bucket_id, file_name):
         async_send_data.daemon = True
         async_send_data.start()
         print "+++++ send save file data to clouds"
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
 
-        # Start listen to ACK for temporary saving a file
-        # call REST API of each cloud in order to save the file temporary
-        # wait for all acks to come in -> join all listen threads
-        # ---> all clouds have successfully saved the file temporary
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_ready_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+        print"++++++++ all clouds have saved the file"
+
         #
         # Start listen to ACK wether commit was successfull (copy temporary file to actual file)
         # send out the commit message via etcd
@@ -1139,7 +1147,11 @@ def rest_syncfile_save_file(user_email, file_name):
         # TODO Only save this file in a temp file
         # TODO send ACK back
 
-        response = "200"
-        if not storageinterface.upload_from_text(user.id, file_name, content):
-            response = "500"
-        return response
+        response = "500"
+        if storageinterface.upload_from_text(user.id, file_name, content):
+            response = "200"
+            file_string = "saveFile/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            etcd_client = init_etcd_connection()
+            etcd_client.write(file_string, 1)
+
+    return response
