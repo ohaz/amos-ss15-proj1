@@ -286,7 +286,7 @@ def listen_ack_etcd(client, user_key, platform, queue, ack_num):
 def listen_commit_status(client, user_key, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        unirest.timeout(10)
+        unirest.timeout(40)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -990,7 +990,13 @@ def rest_share_file(bucket_id, file_name):
 
     res_db_sync = db_cloud_sync(etcd_string, rest_url, data)
 
+    #delete permission etcd key
     etcd_client = init_etcd_connection()
+    permission_dir = etcd_client.get(etcd_string)
+    for child in permission_dir.children:
+        etcd_client.delete(child.key)
+    permission_dir = etcd_client.get(permission_dir.key)
+    etcd_client.delete(permission_dir.key, dir=True)
 
 
 
@@ -1072,7 +1078,7 @@ def rest_syncdb_register_user():
 def rest_syncdb_share_file_permission():
 
     etcd_client = init_etcd_connection()
-    commit_key = 'setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'commit'
+    commit_key = '/setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'commit'
 
     async_commit_queue = Queue()
     async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
