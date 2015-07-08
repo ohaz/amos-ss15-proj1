@@ -64,22 +64,6 @@ define({
 
 	// Functional test suite(s) to run in each browser once non-functional tests are completed
 	functionalSuites: [
-		'tests/functional/connect-to-azure',
-		'tests/functional/azure/register',
-		'tests/functional/azure/logout',
-		'tests/functional/azure/login',
-		'tests/functional/azure/index-web',
-		'tests/functional/azure/index-web_rev',
-		//'tests/functional/azure/index-file-management',
-        //'tests/functional/azure/userauth',  
-		'tests/functional/connect-to-google',
-		'tests/functional/google/register',
-		'tests/functional/google/logout',
-		'tests/functional/google/login',
-		'tests/functional/google/index-web',
-		'tests/functional/google/index-web_rev',
-		//'tests/functional/google/index-file-management',
-	   	//'tests/functional/google/userauth',
 	    'tests/functional/connect-to-aws',
 		'tests/functional/aws/register',
 		'tests/functional/aws/logout',
