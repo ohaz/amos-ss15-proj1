@@ -4,136 +4,119 @@ import os
 import util
 import subprocess
 
+
 ##
 ## UTIL-extension for this Script
 ##
 
-from distutils import file_util
-def copy_file_to_repo(_from_, _to_ ,filename, overwrite=True):
-    target = os.path.join(util.OWN_PATH, 'cloud_specific_files', _to_, 'repo', filename)
-    source = os.path.join(util.OWN_PATH, 'cloud_specific_files', _from_, filename)
-    if os.path.exists(target) :
-        if overwrite :
-            print(' > Util-GC > Replacing '+target)
-            file_util.copy_file(source,target)
-    else :
-        print(' > Util-GC > copying from '+source+' into '+target)
-        file_util.copy_file(source,target)
-
-config_files = ["deploy_config.py","app.yaml","appengine_config.py","config.py","brutto-netto-rechner.pem","google_requirements_glob.txt","google_requirements_loc.txt"]
-
-
-def run_subprocess(cmd):
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stdin=subprocess.PIPE, bufsize=1)
-    for line in iter(p.stdout.readline, b''):
-        print(line)
-    p.stdout.close()
-    p.wait()
-
-##
-## Prepare Deployment
-##
-
-#cp app.yaml, appengine_config.py, config.py to root
-def copy_core_files(rootles):
-    copy_file_to_repo('google',rootles,'app.yaml')
-    copy_file_to_repo('google',rootles,'appengine_config.py')
-    copy_file_to_repo('google',rootles,'config.py')
-
-#cp brutto-netto-rechner.pem
-def copy_secrets(rootles):
-    copy_file_to_repo('google',rootles,'brutto-netto-rechner.pem')
-
-def install_lib(rootles):
-    print(' > Util-GC > installing requirements...')
-    target = os.path.join(util.OWN_PATH, 'cloud_specific_files',rootles,'repo')
-    target_req = os.path.join(target, 'requirements.txt')
-    target_lib = os.path.join(target, 'lib')
-    command = ['pip', 'install' ,'-r', target_req, '-t', target_lib]
-    subprocess.call(command)
-    print(' > Util-GC > Installing finished.')
-
-#
-# Local-deployment
-#
-def option_local():
-    rootles = 'google/local'
-
-    util.copy_repo_to_specific(rootles)
-    lst = None
-    OWN_FOLDER = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google')
-    with open(os.path.join(OWN_FOLDER,'google_requirements_loc.txt')) as hdl :
-        lst = hdl.readlines()
-    util.add_to_requirements(rootles,lst)
-    
-    copy_core_files(rootles)
-    copy_secrets(rootles)
-    install_lib(rootles)
-    
-    _to_ = os.path.join(util.OWN_PATH, 'cloud_specific_files',rootles,'repo')
-    from cloud_specific_files.google import deploy_config
-    command = ["python",deploy_config._DEV_SEV_, "--mysql_host=[[ip]]", "--mysql_user=[[USER]]", "--mysql_password=[[PWD]]", _to_ ]
-
-    with open(os.path.join(_to_,'start-server'),'w+') as hdl :
-        for k in command :
-            hdl.write(k)
-            hdl.write(" ")
-
-    #create script which starts dev_server
-
-#
-# Global-deployment
-#
-def option_global():
-    rootles = 'google/global'
-    util.copy_repo_to_specific(rootles)
-    lst = None
-    OWN_FOLDER = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google')
-    with open(os.path.join(OWN_FOLDER,'google_requirements_glob.txt')) as hdl :
-        lst = hdl.readlines()
-    util.add_to_requirements(rootles,lst)
-    
-    copy_core_files(rootles)
-    copy_secrets(rootles)
-    install_lib(rootles)
-    
-    print(' > > > Pushing to cloud...')
-    from cloud_specific_files.google import deploy_config
-    _to_ = os.path.join(util.OWN_PATH, 'cloud_specific_files',rootles,'repo')
-    command = ["python",deploy_config._DEV_DEP_, "update", "--oauth2", "-A", "brutto-netto-rechner", _to_]
-    try:
-        subprocess.call(command)
-    except :
-        print("> > > Were not able to deploy. Maybe your Path is wrong?")
-
-    print(' > > > Pushed.')
-    ##upload to google-cloud automatically
 
 #
 # Deployment - Interface
 #
 
-options = {"local": option_local, "global": option_global}
+config_files = ["update_script.sh"]
+machines_in_cluster = ['google_compute']
+
+
+
+def copy_remote():
+    """
+    Copies a script needed on the server for executeing the update of the repo!
+    """
+    source = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google','compute')
+    for machine in machines_in_cluster:
+        for file_0 in config_files :
+            #scp update_script.sh google_compute:update_script.sh
+            command = ["scp",os.path.join(source,file_0), machine+":"+file_0]
+            try:
+                subprocess.call(command)
+            except :
+                print("> > > Copy of Deploy_script failed...")
+
+
+def diff_remote():
+    """
+    Helperfunction. Gets the Diff of the specified repo [copied from repo, or local, etc.]
+    and writes the result to the remote servers.
+    """    
+
+    source = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google','compute')
+    
+    #Save old path
+    old_path = os.getcwd()
+    os.chdir(os.path.join(source,'repo'))
+    
+    for machine in machines_in_cluster: 
+
+        try:
+            # try to add google repo to git
+            command = ["git","remote","add","google",machine+":/home/sys/environments/amos/amos-ss15-proj1"]
+            subprocess.call(command)
+            
+            # fetch current branches of google repo 
+            command = ["git","fetch","google"]
+            subprocess.call(command)
+
+            # make diff between this repo, and the remote one
+            #git diff os.path.join(source,repo) google > os.path.join(source,difference)
+            command = ["git","diff","google/master"]
+            with open(os.path.join(source,"difference"),'w') as hdl:
+                result = subprocess.Popen(command,stdout=hdl)
+            
+            # copy diff to server
+            #scp os.path.join(source,difference) google_compute:difference
+            command = ["scp",os.path.join(source,"difference"), machine+":"+"difference"]
+            subprocess.call(command)
+            
+            # remove diff, we don't need it anymore
+            #rm os.path.join(source,difference)
+            command = ["rm",os.path.join(source,"difference")]
+            subprocess.call(command)
+            
+            # remove google as repo from git
+            command = ["git","remote","remove","google"]
+            subprocess.call(command)
+            print("google removed")
+        except :
+            print("> > > Deploy_script failed at " + machine + "...")
+
+            #try to remove google path
+            command = ["git","remote","remove","google"]
+            subprocess.call(command)
+    
+    os.chdir(old_path)
+
+def deploy_remote():
+    """
+    Executes Remote script, which we copied via copy_remote
+    """
+
+    print('\n> Deploying on systems...')
+    for machine in machines_in_cluster:   
+        #ssh google_compute "sudo bash update_script.sh branch"
+        command = ["ssh", machine,"sudo bash "+config_files[0]]
+        try:
+            subprocess.call(command)
+        except :
+            print("> > > Deploy of Deploy_script failed...")
 
 # Implement this function
 def deploy():
-    ready = False
-    while not ready:
-        print('\n> Where should the system be deployed?')
-        ops = raw_input(' > > Comma seperated list (local,global): ')
-        op_list = ops.split(',')
-        for op in op_list :
-            if op in options.keys():
-                options[op]()
-                ready = True
-            else :
-                print("\"" + op + "\" is not known.")
+    util.copy_repo_to_specific('google/compute')
+    
+    print("Diffing current Directory...")
+    diff_remote()
+    
+    print("Copy rest to remote ...")
+    copy_remote()
 
+    print("Deploy changes...")
+    deploy_remote()
 
 # Implement this function
 def all_requirements_available():
     available = True
-    OWN_FOLDER = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google')
+    OWN_FOLDER = os.path.join(util.OWN_PATH, 'cloud_specific_files', 'google','compute')
     for k in config_files :
         if not os.path.exists(os.path.join(OWN_FOLDER, k)):
             available = False

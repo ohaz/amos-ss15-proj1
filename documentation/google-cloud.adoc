@@ -130,3 +130,60 @@ For load-balancing you need to setup a load-balancer.This loadbalancer gives you
 These points need configuring to. First of all we need to setup up the Database. Here we take the approach via alembic, which can use the internal Data of our Python-application to generate a Database. But here we need to be carful. If our application[instance] has only an IP4-address, we need to ensure an IP4 for the DB in the cloud! 
 After the inital Database is setup in the cloud[see google documentation], we have to adapt the config with the according address. At last we generate via alembic the Database.[see alembic docu] [see config.py section]
 For the storage-setup we need an accoring implementation to our interface. [see other sections]
+
+== Cloud Deployer ==
+
+The Cloud Deployer is a very fast way to deploy your code to the clouds, but because security is a very high standard at google, we still need to setup a little but more.
+
+=== Setting up, to use google for the deployer ===
+
+If you want to use the deployer for the google Compute Engine, follow these steps and you should be good to go:
+
+Google Compute engine is server based. So for the use of the deployer make sure, you have a server already running in the cloud. You should have also followed the steps discribed in the other Tutorial about setting up a template in the Google Compute Engine and use this for a fast start of the Http-Server.
+
+We will deploy our application via ssh, and google only allows connection with an RSA-Key. Therfore you need to apply:
+
+ ---- 
+ssh-keygen -f google_rsa -t rsa -N ''
+ ----
+
+Instead of google_rsa, you can choose any name you want, but make sure in the follwing steps to replace the right parts of the expressions.
+This will generate a private- and a public-key for encryption. You have to upload you public-key to the instance. You can either to this via another scp connection [which needs to be already setup], if you can't do this, go into the developer-sconsole and add the key there in your instance. [see google tutorials] Another approach via the Google-API/Libaray/gcloud can also be taken.
+
+
+Make sure your generated files are also placed in ~/.ssh/ ,because this is important for the next step.
+
+ssh uses configs for a fast connection-setup. So does git. Therefore we need this to be setup.
+Create a file config in ~/.ssh/ [~/.ssh/config] with following content:
+
+ ---- 
+
+Host google_compute
+    HostName [IP]
+    User [user]
+    IdentityFile ~/.ssh/google_rsa
+    UserKnownHostsFile /dev/null
+    CheckHostIP no
+    StrictHostKeyChecking 
+
+ ---- 
+
+For the [IP] insert the public IP of the instance [or load-balancer], which you can see in the developers-console. For [user], you insert the same part which was generated in your public-key:
+
+ ---- 
+ssh-rsa XXX-INCREDIBLY_LONG_I_MEAN_REALLY_LONG_KEY_XXX User@SomeDevice
+ ---- 
+
+Now you should be able to ssh to the server, via 
+ ---- 
+ssh google_compute
+ ---- 
+It is very important that you name the host google_compute, if you can't use this name. Make sure you replace the accoring code, in the repository [Library] (Should be one line)
+
+After this is done, you are finished. You should now be able to deploy in the path cloud-deployer via:
+ ----
+python deployer.py
+ ----
+
+Have fun with the AMOS-Deployer!
+
