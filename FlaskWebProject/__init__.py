@@ -187,6 +187,10 @@ file_listener = EtcdDBListener("/saveFile")
 file_listener.daemon = True
 file_listener.start()
 
+permisson_listener = EtcdDBListener("/setPermission")
+permisson_listener.daemon = True
+permisson_listener.start()
+
 
 import FlaskWebProject.views
 import FlaskWebProject.models
