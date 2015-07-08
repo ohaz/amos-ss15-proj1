@@ -1098,15 +1098,19 @@ def rest_syncdb_share_file_permission():
     commit_res = async_commit_queue.get()
     print ">>>> commit result: " + commit_res
 
+
+
     if commit_res == "1":
-        useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == request.json['user_id'],
-                                                        UserUserfile.userfile_id == request.json['userfile_id']).first()
+        userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
+        user = dbSession.query(User).filter(User.username == request.json['username']).first()
+        useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
+                                                        UserUserfile.userfile_id == userfile.id).first()
         if useruserfile is not None:
             useruserfile.permission = permission
             dbSession.commit()
         else:
-            userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
-            user = dbSession.query(User).filter(User.username == request.json['username']).first()
+            #userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
+            #user = dbSession.query(User).filter(User.username == request.json['username']).first()
             # 5. set permission in table UserUserfile
             print("set useruserfile")
             useruserfile = UserUserfile(userfile, user, request.json['permission'])
