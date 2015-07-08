@@ -62,13 +62,13 @@ def download_branch(url):
 
                 # Method
 
-                print(status)
+                #print(status)
 
                 # Method 2
 
-                #import sys
-                #sys.stdout.write('\r' + str(status))
-                #sys.stdout.flush()
+                import sys
+                sys.stdout.write('\r' + str(status))
+                sys.stdout.flush()
 
                 # END OF METHODS
 
