@@ -13,7 +13,7 @@ define([
                 // login
                 .findById('username')
                     .click()
-                    .type('test11')
+                    .type('test_func_1')
                     .end()
                 .findById('password')
                     .click()

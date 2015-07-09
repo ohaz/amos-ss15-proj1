@@ -9,7 +9,7 @@ define([
         // before the suite starts
         setup: function () {
             return this.remote
-                .get(require.toUrl('http://brutto-netto-rechner.appspot.com'));
+                .get(require.toUrl('http://104.197.49.52/'));
         }
     });
 });

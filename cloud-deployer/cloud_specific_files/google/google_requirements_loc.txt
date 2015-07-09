@@ -1,7 +1,0 @@
-
-#Storage
-google-api-python-client
-httplib2
-
-#Storage oauth_remote
-pycrypto
