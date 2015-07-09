@@ -975,14 +975,20 @@ def rest_share_file(bucket_id, file_name):
         return "404"  # Not found
     # 5. check if permission allready exists in table UserUserfile
 
+    #user_file_owner
+    user_file_owner = dbSession.query(User).filter(User.id == bucket_id).first()
+
     data = {
-        'user_id': user.id,
-        'userfile_id': userfile.id,
+        'name_file_owner': user_file_owner.username,
         'permission': permission,
         'bucket_id': bucket_id,
         'file_name': file_name,
         'username': username
     }
+
+    print "Username Owner: " + user_file_owner.username
+    print "file_name: " + file_name
+    print "username: " + username
 
     rest_url = '/storage/api/v1.0/syncdb/sharefilepermission'
 
@@ -997,22 +1003,6 @@ def rest_share_file(bucket_id, file_name):
         etcd_client.delete(child.key)
     permission_dir = etcd_client.get(permission_dir.key)
     etcd_client.delete(permission_dir.key, dir=True)
-
-
-
-    """
-    useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
-                                                        UserUserfile.userfile_id == userfile.id).first()
-    if useruserfile is not None:
-        useruserfile.permission = permission
-        dbSession.commit()
-    else:
-        # 5. set permission in table UserUserfile
-        print("set useruserfile")
-        useruserfile = UserUserfile(userfile, user, permission)
-        dbSession.add(useruserfile)
-        dbSession.commit()
-    """
     return "200"
 
 
@@ -1076,9 +1066,13 @@ def rest_syncdb_register_user():
 
 @app.route('/storage/api/v1.0/syncdb/sharefilepermission', methods=['POST'])
 def rest_syncdb_share_file_permission():
+    name_file_owner = request.json['name_file_owner']
+    share_username = request.json['username']
+    permission = request.json['permission']
+    file_name = request.json['file_name']
 
     etcd_client = init_etcd_connection()
-    commit_key = '/setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'commit'
+    commit_key = '/setPermission/' + share_username + '_' + file_name + '/' + 'commit'
 
     async_commit_queue = Queue()
     async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
@@ -1086,7 +1080,7 @@ def rest_syncdb_share_file_permission():
     async_commit_data.start()
 
 
-    key_path = 'setPermission/'+ request.json['username'] + '_' + request.json['file_name'] + '/' + 'ack_' + cloudplatform
+    key_path = 'setPermission/' + share_username + '_' + file_name + '/' + 'ack_' + cloudplatform
 
     print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
     print "key: " + key_path
@@ -1101,22 +1095,29 @@ def rest_syncdb_share_file_permission():
 
 
     if commit_res == "1":
-        userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
-        user = dbSession.query(User).filter(User.username == request.json['username']).first()
+
+        user_file_owner = dbSession.query(User).filter(User.username == name_file_owner).first()
+        print "got owner: " + str(user_file_owner.id)
+        user = dbSession.query(User).filter(User.username == share_username).first()
+        print "shared user: " + str(user.id)
+        userfile = dbSession.query(Userfile).filter(Userfile.folder == user_file_owner.id, Userfile.name == file_name).first()
+        print "userfile" + str(userfile.id)
+        
         useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
                                                         UserUserfile.userfile_id == userfile.id).first()
+        print "useruserfile"
         if useruserfile is not None:
+            print "entry available"
             useruserfile.permission = permission
             dbSession.commit()
         else:
-            #userfile = dbSession.query(Userfile).filter(Userfile.folder == request.json['bucket_id'], Userfile.name == request.json['file_name']).first()
-            #user = dbSession.query(User).filter(User.username == request.json['username']).first()
-            # 5. set permission in table UserUserfile
             print("set useruserfile")
-            useruserfile = UserUserfile(userfile, user, request.json['permission'])
+            useruserfile = UserUserfile(userfile, user, permission)
             dbSession.add(useruserfile)
             dbSession.commit()
+            
         etcd_client.write(key_path, 3)
+        
     return "200"
 
 
