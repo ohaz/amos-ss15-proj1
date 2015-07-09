@@ -999,10 +999,13 @@ def rest_share_file(bucket_id, file_name):
     #delete permission etcd key
     etcd_client = init_etcd_connection()
     permission_dir = etcd_client.get(etcd_string)
-    for child in permission_dir.children:
-        etcd_client.delete(child.key)
-    permission_dir = etcd_client.get(permission_dir.key)
-    etcd_client.delete(permission_dir.key, dir=True)
+    if not permission_dir._children:
+        etcd_client.delete(permission_dir.key, dir=True)
+    else:
+        for child in permission_dir.children:
+            etcd_client.delete(child.key)
+        permission_dir = etcd_client.get(permission_dir.key)
+        etcd_client.delete(permission_dir.key, dir=True)
     return "200"
 
 
@@ -1115,7 +1118,7 @@ def rest_syncdb_share_file_permission():
             useruserfile = UserUserfile(userfile, user, permission)
             dbSession.add(useruserfile)
             dbSession.commit()
-            
+    
         etcd_client.write(key_path, 3)
         
     return "200"
