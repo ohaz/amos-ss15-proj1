@@ -996,6 +996,30 @@ def rest_share_file(bucket_id, file_name):
 
     res_db_sync = db_cloud_sync(etcd_string, rest_url, data)
 
+    etcd_client = init_etcd_connection()
+   
+    if res_db_sync == 1: 
+        permission_dir = etcd_client.get(etcd_string)
+        for child in permission_dir.children:
+            etcd_client.delete(child.key)
+        permission_dir = etcd_client.get(permission_dir.key)
+        etcd_client.delete(permission_dir.key, dir=True)
+    """
+    else:
+        try:
+            permission_dir = etcd_client.get(etcd_string)
+            for child in permission_dir.children:
+                etcd_client.delete(child.key)
+            permission_dir = etcd_client.get(permission_dir.key)
+            etcd_client.delete(permission_dir.key, dir=True)
+        except EtcdNotFile:
+            print "Failure while sync permissions, no etcd key available"
+        except EtcdKeyNotFound:
+            print "Failure while sync permissions, no etcd key available"
+    """
+
+    
+    """
     #delete permission etcd key
     etcd_client = init_etcd_connection()
     permission_dir = etcd_client.get(etcd_string)
@@ -1007,6 +1031,7 @@ def rest_share_file(bucket_id, file_name):
         permission_dir = etcd_client.get(permission_dir.key)
         etcd_client.delete(permission_dir.key, dir=True)
     return "200"
+    """
 
 
 '''
