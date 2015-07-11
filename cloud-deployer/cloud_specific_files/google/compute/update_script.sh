@@ -9,16 +9,22 @@ if [ -n "$bp" ] ; then
 fi
 
 # get into repo-context [virtualenv]
-cp difference /home/sys/environments/amos/difference
-cd /home/sys/environments/amos/amos-ss15-proj1/
+cd /home/sys/environments/amos/
 source /home/sys/environments/amos/bin/activate
 
-#update repo 
-git checkout master
-git reset --hard HEAD
-git clean -fd --exclude=brutto-netto-rechner-compute.pem
+proj_name="amos-ss15-proj1"
 
-git apply ../difference
+if [ -d $proj_name ] ;
+then
+    rm -r $proj_name
+fi
+
+git clone repository $proj_name 
+
+cd $proj_name
+
+cp ../config.py config.py
+cp ../brutto-netto-rechner-compute.pem brutto-netto-rechner-compute.pem
 
 #reinstall requirements if needed, 
 #sometimes, we should update the startupscript, because of really hard dependencies [gcc, etc.]
