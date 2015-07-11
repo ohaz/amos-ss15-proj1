@@ -52,6 +52,7 @@ Exmaple Autoscript: [we are using this file]
  ---- 
 set -e
 
+# this is a very fancy way of getting files from google Drive, but don't forget the user-auth. [not here pictured, because of sec. issues]
 copy_arr(){
     array=$1[@]
     arr=("${!array}")
@@ -61,6 +62,7 @@ copy_arr(){
     done
 }
 
+#Files we probably need
 
 #config.py
 google[0]="XXX"
@@ -74,49 +76,83 @@ google[2]="XXX"
 #nginx.conf
 google[3]="XXX"
 
-cd /home
-mkdir sys
-cd sys
 
-wget "https://bootstrap.pypa.io/get-pip.py"
-python get-pip.py
+# This if says the Instance, if it was already initalized and is only rebooted
+if [ ! -f "/home/sys/alreadySetup" ]; then
+    cd /home
+    mkdir sys
+    cd sys
+    
+    #get pip, because we can use install via virtualenv [not system-wide]
+    wget "https://bootstrap.pypa.io/get-pip.py"
+    python get-pip.py
+    
+    #get Systemrequirements for our pip-packages    
+    sudo apt-get -y update
+    sudo apt-get -y install nginx
+    sudo apt-get -y install git
+    sudo apt-get -y install libmysqlclient-dev
+    sudo apt-get -y install python-dev
+    sudo apt-get -y install libffi-dev
+    
+    #setup pip-environment
+    pip install virtualenv
+    mkdir environments
+    sudo virtualenv /home/sys/environments/amos
+    source /home/sys/environments/amos/bin/activate
+    cd /home/sys/environments/amos
+    pip install gunicorn
+        
+    #create repo to push to 
+    #   - later in the deployment-scipt, you can use this repo to pull and push to
+    #   - ,this gets rid of potential conflicts, if we have multiple users.
+    mkdir repository
+    cd repository
+    sudo git init --bare
+    cd ..
+    
+    #install requirements, which are later implicitly needed
+    pip install gcloud
+    pip install jinja2
+    pip install pycrypto
+    pip install mysql
+        
+    #google storage librarys
+    pip install google-api-python-client
+    
+    #get secrets
+    copy_arr google
+    sudo cp nginx.conf /etc/nginx/nginx.conf
+    
+    #Start our proxy
+    sudo /usr/sbin/nginx
+    
+    sudo touch "/home/sys/alreadySetup"
+else 
+    
+    # everything is already setup, but just in case.
+    # get most recent config-files
+    source /home/sys/environments/amos/bin/activate
+    cd /home/sys/environments/amos/
+    
+    rm config.py
+    rm brutto-netto-rechner-compute.pem
+    rm server.conf
+    rm nginx.conf
+    
+    #get secrets
+    copy_arr google
+    sudo cp nginx.conf /etc/nginx/nginx.conf
+    
+    #start our proxy
+    sudo /usr/sbin/nginx -s reload
+fi
 
-sudo apt-get -y update
-sudo apt-get -y install nginx
-sudo apt-get -y install git
-sudo apt-get -y install libmysqlclient-dev
-sudo apt-get -y install python-dev
+# will push and pull to the repo, so we need to give "apropiate" permissions
+chmod 777 -R /home/sys/environments/amos/
 
-pip install virtualenv
-mkdir environments
-sudo virtualenv /home/sys/environments/amos
-source /home/sys/environments/amos/bin/activate
-cd /home/sys/environments/amos
-pip install gunicorn
-
-#get project
-sudo git clone "https://github.com/ohaz/amos-ss15-proj1.git"
-cd amos-ss15-proj1
-
-#app.yaml
-pip install gcloud
-pip install jinja2
-pip install pycrypto
-pip install mysql
-
-#install requirements
-pip install -r requirements.txt
-
-#google storage librarys
-pip install google-api-python-client
-
-#get secrets
-copy_arr google
-cp server.conf ../server.conf
-sudo cp nginx.conf /etc/nginx/nginx.conf
-sudo /usr/sbin/nginx
-
-../bin/gunicorn -w 4 FlaskWebProject:app &
+#Finally start our application-backend
+../bin/gunicorn -w 4 FlaskWebProject:app & ---- 
 
  ---- 
 
@@ -134,6 +170,65 @@ For the storage-setup we need an accoring implementation to our interface. [see 
 == Cloud Deployer ==
 
 The Cloud Deployer is a very fast way to deploy your code to the clouds, but because security is a very high standard at google, we still need to setup a little but more.
+
+=== Deployment or 'How we get our code into the cloud' === 
+We insert here a little chapter for explanation, what the google-deployer does. Usally Clouds are providing a way to deploy their code. But because, we based our system only on an OS, we have to do this ourselve.
+
+Our setting:
+* Our Deployment-script pulls the code of our repo
+* we can make local changes
+* Then we apply "python deployer.py", to deploy and see how our changes are working out
+
+So for deplyoment to work for every instance, we deploy via a remote repository, which the instances can pull from to setup their servers.
+
+But because handling 1 remote server on 1 instance is to much of hassle [it's still a much cleaner approach], we decided to create this remote repository for every instance. We can only deploy via the deployer, therefore we can ensure every instance is updated, as long as the configs are setup properly.
+
+General Approach:
+
+[ditaa]
+ ---- 
+                   +-------------+
+                   | User - Repo |
+                   |             |
+                   +-------------+
+                        | deployer
+                        V
+                +------------------+
+                | Cloud-Repository |
+                |                  |
+                +------------------+
+                       A
+                       |  
+     +-----------------+------------------+
+     | pull            | pull             | pull       [most likely via notification]
+ +------------+  +-------------+      +-------------+ 
+ | Instance1  |  | Instance 2  | ...  | Instance n  |
+ +------------+  +-------------+      +-------------+
+ ---- 
+
+
+Our Approach :
+
+[ditaa]
+ ---- 
+                 +-------------+
+                 | User - Repo |
+                 |             |
+                 +-------------+
+                       |  deployer        
+                       |  
+     +-----------------+------------------+
+     V push            V push             V push
+ +------------+  +-------------+      +-------------+ 
+ | Instance1  |  | Instance 2  | ...  | Instance n  |
+ +------------+  +-------------+      +-------------+
+     |                 |                  |
+     V clone           V clone            V clone
+ +------------+  +-------------+      +-------------+ 
+ | Instance1  |  | Instance 2  | ...  | Instance n  |
+ +------------+  +-------------+      +-------------+
+
+ ---- 
 
 === Setting up, to use google for the deployer ===
 

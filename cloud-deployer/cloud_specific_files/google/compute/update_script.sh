@@ -12,17 +12,16 @@ fi
 cd /home/sys/environments/amos/
 source /home/sys/environments/amos/bin/activate
 
+#update our deploy-repo
 proj_name="amos-ss15-proj1"
-
 if [ -d $proj_name ] ;
 then
     rm -r $proj_name
 fi
-
 git clone repository $proj_name 
 
+# pull our config-files into the deploy-repo
 cd $proj_name
-
 cp ../config.py config.py
 cp ../brutto-netto-rechner-compute.pem brutto-netto-rechner-compute.pem
 
