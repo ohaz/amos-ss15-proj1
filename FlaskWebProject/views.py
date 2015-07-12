@@ -16,7 +16,7 @@ from .forms import LoginForm, RegisterForm
 from .models import User, Userfile, UserUserfile
 from FlaskWebProject import storageinterface
 import etcd
-from etcd import EtcdNotFile
+from etcd import EtcdNotFile, EtcdKeyNotFound, EtcdException
 from config import etcd_member
 from config import cloud_hoster
 # from etcd import EtcdException
@@ -183,7 +183,7 @@ def listen_ready_ack(client, user_key, platform, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
         print "listen_ready_ack: wait url: " + url
-        unirest.timeout(10)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -219,7 +219,7 @@ def listen_ack_receiving_data(client, user_key, platform, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
         print "listen_ack_receiving_data: wait url: " + url
-        unirest.timeout(10)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -242,7 +242,7 @@ def listen_ack_written_data(client, user_key, platform, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
         print "listen_ack_written_data: wait url: " + url
-        unirest.timeout(10)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -266,7 +266,7 @@ def listen_ack_etcd(client, user_key, platform, queue, ack_num):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
         print "listen_ack_etcd: wait url: " + url
-        unirest.timeout(10)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -286,7 +286,7 @@ def listen_ack_etcd(client, user_key, platform, queue, ack_num):
 def listen_commit_status(client, user_key, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        unirest.timeout(40)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
@@ -310,6 +310,7 @@ def load_user(id):
     :param string/int id: the id of the user to load
     """
     user = dbSession.query(User).filter(User.id == int(id)).first()
+    dbSession.remove()
     return user
 
 
@@ -368,11 +369,13 @@ def login():
                 if password == hashlib.sha256(salt.encode() + request.form['password'].encode()).hexdigest():
                     session['remember_me'] = form.remember_me.data
                     login_user(user)
+                    dbSession.remove()
                     return redirect(request.args.get('next') or url_for('home'))
                 else:
                     error = 'Invalid password'
             else:
                 error = 'Invalid username'
+    dbSession.remove()
     return render_template('login.html', form=form, error=error)
 
 
@@ -424,8 +427,9 @@ def register():
                 user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
 
                 login_user(user)
+                dbSession.remove()
                 return redirect(url_for('home'))
-
+    dbSession.remove()
     return render_template('register.html', form=form, error=error)
 
 
@@ -529,6 +533,7 @@ def facebook_authorized(resp):
 
     else:
         login_user(user)
+    dbSession.remove()
     return redirect(next_url)
 
 
@@ -609,6 +614,7 @@ def google_authorized(resp):
 
     else:
         login_user(user)
+    dbSession.remove()
     return redirect(next_url)
 
 
@@ -639,6 +645,7 @@ def rest_list_files(bucket_id):
         data.append(_iter_[0])
     json_string = json.dumps(data)
     # print(json_string)
+    dbSession.remove()
     return json_string
 
 
@@ -668,6 +675,7 @@ def rest_delete_container(bucket_id):
     dbSession.delete(user)
     dbSession.commit()
     storageinterface.delete_container(bucket_id)
+    dbSession.remove()
     return "200"
 
 
@@ -691,8 +699,10 @@ def rest_download_file_to_text(bucket_id, file_name):
                                                               Userfile.folder == bucket_id).first()
 
     if userfile is None:
+        dbSession.remove()
         return "404"  # Not found
     if int(userfile.UserUserfile.permission) < 4:
+        dbSession.remove()
         return "403"
 
     value = storageinterface.download_file_to_text(bucket_id, file_name)
@@ -700,6 +710,7 @@ def rest_download_file_to_text(bucket_id, file_name):
     if value is None:  # FIXME wat do in this case?
         print('Database out of synch with storage!')
         value = ""
+    dbSession.remove()
     return value
 
 
@@ -721,6 +732,7 @@ def rest_upload_from_text(bucket_id, file_name):
     user = dbSession.query(User).filter(User.id == bucket_id).first()
     if userfile is None:
         if user is None:
+            dbSession.remove()
             return "403"  # Forbidden
             # userfile = Userfile(bucket_id, file_name)
             # useruserfile = UserUserfile(userfile, user, 6)
@@ -733,6 +745,7 @@ def rest_upload_from_text(bucket_id, file_name):
         useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
                                                             UserUserfile.userfile_id == userfile.id).first()
         if useruserfile is None or useruserfile.permission < 6:
+            dbSession.remove()
             return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
     content = request.json['content']
@@ -817,6 +830,7 @@ def rest_upload_from_text(bucket_id, file_name):
     response = "200"
     # if not storageinterface.upload_from_text(bucket_id, file_name, content):
     # response = "500"
+    dbSession.remove()
     return response
 
 
@@ -836,6 +850,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
     # 2 check if this file really exists
     element = dbSession.query(Userfile).filter((Userfile.folder == bucket_id), (Userfile.name == file_name)).first()
     if element is None:
+        dbSession.remove()
         return "404"
     print(element.name)
     # 3 get this file again, just to check with right permissions
@@ -846,6 +861,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
                                                            Userfile.folder == bucket_id,
                                                            Userfile.name == file_name).first()
     if file_ is None:
+        dbSession.remove()
         return '403'  # because file exists, this means user has no right to manipulate
     print(file_.Userfile.name)
     # 4 send new element
@@ -854,6 +870,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
     if not storageinterface.upload_from_text(bucket_id, file_name, content):
         response = "500"
     print(response)
+    dbSession.remove()
     return response
 
 
@@ -876,6 +893,7 @@ def rest_delete_file(bucket_id, file_name):
     # 3 check if this combination really exists
     elements = dbSession.query(Userfile).filter((Userfile.folder == bucket_id), (Userfile.name == file_name)).first()
     if elements is None:
+        dbSession.remove()
         return "404"
     # 4 try a delete-atempt
     # ATT [here an exception can lead to desynchronized states]
@@ -887,7 +905,9 @@ def rest_delete_file(bucket_id, file_name):
             dbSession.delete(ref)
         dbSession.delete(elements)
         dbSession.commit()
+        dbSession.remove()
         return "200"
+    dbSession.remove()
     return "500"  # something went wrong
 
 
@@ -914,6 +934,7 @@ def rest_share_list_files_read():
     for _iter_ in files:
         data.append([_iter_.User.username, _iter_.Userfile.name, _iter_.User.id])
     json_string = json.dumps(data)
+    dbSession.remove()
     return json_string
 
 
@@ -941,6 +962,7 @@ def rest_share_list_files_write():
     for _iter_ in files:
         data.append([_iter_.User.username, _iter_.Userfile.name, _iter_.User.id])
     json_string = json.dumps(data)
+    dbSession.remove()
     return json_string
 
 
@@ -954,9 +976,16 @@ def rest_share_file(bucket_id, file_name):
     :param string file_name: The name of the file
     :return file: a status response
     """
+
     print "rest_share_file: ..."
     username = request.json['username']
     permission = request.json['permission']
+
+
+    print "username: " + username
+    print "permission: " + permission
+    print "bucket id: " + str(bucket_id)
+    print "filename: " + file_name
 
     # 1. check if logged in user is owner of file_name
     if g.user is None or not g.user.is_authenticated():
@@ -967,11 +996,13 @@ def rest_share_file(bucket_id, file_name):
     # 3. check if file in table Userfile exists
     userfile = dbSession.query(Userfile).filter(Userfile.folder == bucket_id, Userfile.name == file_name).first()
     if userfile is None:
+        dbSession.remove()
         return "404"  # Not found
     # 4. check if user_id in table User exists
     print("check user")
     user = dbSession.query(User).filter(User.username == username).first()
     if user is None:
+        dbSession.remove()
         return "404"  # Not found
     # 5. check if permission allready exists in table UserUserfile
 
@@ -1013,25 +1044,15 @@ def rest_share_file(bucket_id, file_name):
             permission_dir = etcd_client.get(permission_dir.key)
             etcd_client.delete(permission_dir.key, dir=True)
         except EtcdNotFile:
-            print "Failure while sync permissions, no etcd key available"
+            print "EtcdNotFile: Failure while sync permissions, no etcd key available"
         except EtcdKeyNotFound:
-            print "Failure while sync permissions, no etcd key available"
+            print "EtcdKeyNotFound: Failure while sync permissions, no etcd key available"
+        except EtcdException:
+            print "EtcdException: Failure while sync permissions, no etcd key available"
     """
 
-    
-    """
-    #delete permission etcd key
-    etcd_client = init_etcd_connection()
-    permission_dir = etcd_client.get(etcd_string)
-    if not permission_dir._children:
-        etcd_client.delete(permission_dir.key, dir=True)
-    else:
-        for child in permission_dir.children:
-            etcd_client.delete(child.key)
-        permission_dir = etcd_client.get(permission_dir.key)
-        etcd_client.delete(permission_dir.key, dir=True)
+    dbSession.remove()
     return "200"
-    """
 
 
 '''
@@ -1089,6 +1110,7 @@ def rest_syncdb_register_user():
         # create container/bucket for the new registered user
         storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
+    dbSession.remove()
     return "200"
 
 
@@ -1143,8 +1165,10 @@ def rest_syncdb_share_file_permission():
             useruserfile = UserUserfile(userfile, user, permission)
             dbSession.add(useruserfile)
             dbSession.commit()
-    
+            
         etcd_client.write(key_path, 3)
+
+    dbSession.remove()
         
     return "200"
 
@@ -1172,6 +1196,7 @@ def rest_syncfile_save_file(user_email, file_name):
                                                                 UserUserfile.userfile_id == userfile.id).first()
             if useruserfile is None or useruserfile.permission < 6:
                 print("return 403")
+                dbSession.remove()
                 return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
         content = request.json['content']
@@ -1192,5 +1217,5 @@ def rest_syncfile_save_file(user_email, file_name):
             file_string = "saveFile/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
             etcd_client.write(file_string, 1)
-
+        dbSession.remove()
     return response
