@@ -801,7 +801,7 @@ def rest_upload_from_text(bucket_id, file_name):
         etcd_cloud_hoster = cloud_hoster
         # evaluate results from queue
         for i in range(0, thread_counter_clouds):
-            result = async_ready_queue.get()
+            result = async_receive_queue.get()
             for r in result:
                 if result[r][0]:
                     etcd_cloud_hoster[r][0] = True
@@ -1158,6 +1158,6 @@ def rest_syncfile_save_file(user_email, file_name):
             response = "200"
             file_string = "saveFile/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
-            etcd_client.write(file_string, 1)
+            etcd_client.write(file_string, 2)
 
     return response
