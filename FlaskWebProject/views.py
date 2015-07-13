@@ -788,6 +788,40 @@ def rest_upload_from_text(bucket_id, file_name):
             'content': content
         }
 
+        # create file string with _tmp suffix
+        file_string_tmp = "saveFile_tmp/" + str(user.id) + '_' + file_name + '_tmp/'
+        async_receive_queue = Queue()
+        thread_listen_receive_list = []
+        thread_counter_clouds = 0
+        for hoster in etcd_cloud_hoster:
+            if etcd_cloud_hoster[hoster][1]:
+                hoster_string_ready = "/" + file_string_tmp + "ack_" + hoster
+                pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
+                                  async_receive_queue, "2")
+                pros.daemon = True
+                pros.start()
+                thread_listen_receive_list.append(pros)
+                thread_counter_clouds = thread_counter_clouds + 1
+
+        async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
+                                     '/storage/api/v1.0/syncfile/savefile_tmp/' + current_user.email + '/' + file_name)
+        async_send_data.daemon = True
+        async_send_data.start()
+        print "+++++ send save file temp data to clouds"
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
+
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_receive_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+        print"++++++++ all clouds have saved the file temporarily"
+
+        file_string = "saveFile/" + str(user.id) + '_' + file_name + '/'
         async_receive_queue = Queue()
         thread_listen_receive_list = []
         thread_counter_clouds = 0
@@ -795,7 +829,7 @@ def rest_upload_from_text(bucket_id, file_name):
             if etcd_cloud_hoster[hoster][1]:
                 hoster_string_ready = "/" + file_string + "ack_" + hoster
                 pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
-                                  async_receive_queue, "2")
+                                  async_receive_queue, "3")
                 pros.daemon = True
                 pros.start()
                 thread_listen_receive_list.append(pros)
@@ -813,18 +847,12 @@ def rest_upload_from_text(bucket_id, file_name):
         etcd_cloud_hoster = cloud_hoster
         # evaluate results from queue
         for i in range(0, thread_counter_clouds):
-            result = async_ready_queue.get()
+            result = async_receive_queue.get()
             for r in result:
                 if result[r][0]:
                     etcd_cloud_hoster[r][0] = True
         print"++++++++ all clouds have saved the file"
 
-        #
-        # Start listen to ACK wether commit was successfull (copy temporary file to actual file)
-        # send out the commit message via etcd
-        # wait for all acks to come in -> join all listen threads
-        # ---> all clouds have sucessfully copied the temp file to the actual file
-        # ---> return 200
 
     response = "200"
     # if not storageinterface.upload_from_text(bucket_id, file_name, content):
@@ -1162,6 +1190,54 @@ def rest_syncdb_share_file_permission():
     return "200"
 
 
+@app.route('/storage/api/v1.0/syncfile/savefile_tmp/<string:user_email>/<string:file_name>', methods=['POST'])
+def rest_syncfile_save_file_tmp(user_email, file_name):
+    print "rest_syncfile_save_file_tmp: ..."
+    if request.method == 'POST':
+        # set tmp suffix for saving the file only temporary
+        file_name += "_tmp"
+
+        # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
+        userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
+        user = dbSession.query(User).filter(User.email == user_email).first()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user.get_id())
+        if userfile is None:
+            if user is None:
+                return "403"  # Forbidden
+            userfile = Userfile(user.get_id(), file_name)
+            useruserfile = UserUserfile(userfile, user, 6)
+            dbSession.add(userfile)
+            dbSession.add(useruserfile)
+            dbSession.commit()
+
+        # if file exists -> check if file_name, user_id is found with right permission in UserUserfiles
+        else:
+            useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
+                                                                UserUserfile.userfile_id == userfile.id).first()
+            if useruserfile is None or useruserfile.permission < 6:
+                print("return 403")
+                dbSession.remove()
+                return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
+
+        content = request.json['content']
+        print("-------------------------------------------------------------")
+        print("Received an external POST in order to save following file temporarily")
+        print("content: " + content)
+        print("user email: " + user_email)
+        print("bucketid: " + str(user.get_id()))
+        print("file_name: " + file_name)
+        print("-------------------------------------------------------------")
+
+        response = "500"
+        if storageinterface.upload_from_text(user.id, file_name, content):
+            response = "200"
+            file_string = "saveFile_tmp/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            etcd_client = init_etcd_connection()
+            etcd_client.write(file_string, 2)
+        dbSession.remove()
+    return response
+
+
 @app.route('/storage/api/v1.0/syncfile/savefile/<string:user_email>/<string:file_name>', methods=['POST'])
 def rest_syncfile_save_file(user_email, file_name):
     print "rest_syncfile_save_file: ..."
@@ -1188,23 +1264,31 @@ def rest_syncfile_save_file(user_email, file_name):
                 dbSession.remove()
                 return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
-        content = request.json['content']
+
+        # get tmp file that was saved before
+        file_name_tmp = file_name+"_tmp"
+
+        # get value of tmp file
+        tmp_value = storageinterface.download_file_to_text(user.get_id(), file_name+"_tmp")
+
+
+        # delete tmp file
+        # storageinterface.delete_file(user.get_id, file_name_tmp)
+        # TODO deleting the tmp file is not working somehow
+
         print("-------------------------------------------------------------")
         print("Received an external POST in order to save following file")
-        print("content: " + content)
+        print("content: " + tmp_value)
         print("user email: " + user_email)
         print("bucketid: " + str(user.get_id()))
         print("file_name: " + file_name)
         print("-------------------------------------------------------------")
 
-        # TODO Only save this file in a temp file
-        # TODO send ACK back
-
         response = "500"
-        if storageinterface.upload_from_text(user.id, file_name, content):
+        if storageinterface.upload_from_text(user.id, file_name, tmp_value):
             response = "200"
             file_string = "saveFile/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
-            etcd_client.write(file_string, 1)
+            etcd_client.write(file_string, 3)
         dbSession.remove()
     return response
