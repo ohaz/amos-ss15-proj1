@@ -269,10 +269,6 @@ def listen_ack_etcd(client, user_key, platform, queue, ack_num):
         unirest.timeout(10000)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
-        app.logger.error(etcd_response.body)
-        client.write("/print/" + platform + '/' + str(ack_num), etcd_response.body)
-
-        # TODO: should be exported to new thread
         print "listen_ack_etcd: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == ack_num:
             receive_result[platform][0] = True
