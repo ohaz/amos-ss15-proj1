@@ -24,7 +24,6 @@ from config import cloudplatform
 from sqlalchemy.orm import sessionmaker, scoped_session
 from multiprocessing import Queue
 
-
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 APP_STATIC = os.path.join(APP_ROOT, 'static')
@@ -258,17 +257,21 @@ def listen_ack_written_data(client, user_key, platform, queue):
     finally:
         queue.put(receive_result)
 
-
+@auto_logger
 def listen_ack_etcd(client, user_key, platform, queue, ack_num):
     print "listen_ack_etcd: listen for ack_num: " + ack_num + " from platform: " + platform
     # counter = 0
     receive_result = {platform: [False]}
+    
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
         print "listen_ack_etcd: wait url: " + url
-        unirest.timeout(20)
+        unirest.timeout(10000)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
+        app.logger.error(etcd_response.body)
+        client.write("/print/" + platform + '/' + str(ack_num), etcd_response.body)
+
         # TODO: should be exported to new thread
         print "listen_ack_etcd: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == ack_num:
@@ -1029,30 +1032,20 @@ def rest_share_file(bucket_id, file_name):
 
     etcd_client = init_etcd_connection()
    
-    if res_db_sync == 1: 
-        permission_dir = etcd_client.get(etcd_string)
-        for child in permission_dir.children:
-            etcd_client.delete(child.key)
-        permission_dir = etcd_client.get(permission_dir.key)
+    permission_dir = etcd_client.get(etcd_string)
+    for child in permission_dir.children:
+        etcd_client.delete(child.key)
+    permission_dir = etcd_client.get(permission_dir.key)
+    if permission_dir is not None:
         etcd_client.delete(permission_dir.key, dir=True)
-    """
+
+    if res_db_sync != 1:
+        ret_val = "503"
     else:
-        try:
-            permission_dir = etcd_client.get(etcd_string)
-            for child in permission_dir.children:
-                etcd_client.delete(child.key)
-            permission_dir = etcd_client.get(permission_dir.key)
-            etcd_client.delete(permission_dir.key, dir=True)
-        except EtcdNotFile:
-            print "EtcdNotFile: Failure while sync permissions, no etcd key available"
-        except EtcdKeyNotFound:
-            print "EtcdKeyNotFound: Failure while sync permissions, no etcd key available"
-        except EtcdException:
-            print "EtcdException: Failure while sync permissions, no etcd key available"
-    """
+        ret_val = "200"
 
     dbSession.remove()
-    return "200"
+    return ret_val
 
 
 '''

@@ -113,8 +113,11 @@ $( document ).ready(function() {
                             if(response == "200"){
                                 //Hide modal after successfully saving the result
                                 $('#shareFileModal').modal('hide')
+                            } else {
+                                alert("Connection Error: Please try again!");
                             }
                             console.log(response);
+
                         },
                         error: function (data) {
                             console.log("error in post request");
