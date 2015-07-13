@@ -1245,11 +1245,12 @@ def rest_syncfile_save_file(user_email, file_name):
         # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
         userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
         user = dbSession.query(User).filter(User.email == user_email).first()
-        print("-------------> found user with email : " + user_email + " and bucket id : " + user.get_id())
+        user_id = user.get_id()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user_id)
         if userfile is None:
             if user is None:
                 return "403"  # Forbidden
-            userfile = Userfile(user.get_id(), file_name)
+            userfile = Userfile(user_id, file_name)
             useruserfile = UserUserfile(userfile, user, 6)
             dbSession.add(userfile)
             dbSession.add(useruserfile)
@@ -1264,30 +1265,39 @@ def rest_syncfile_save_file(user_email, file_name):
                 dbSession.remove()
                 return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
-
-        # get tmp file that was saved before
         file_name_tmp = file_name+"_tmp"
+        tmp_value = ""
+        elements = dbSession.query(Userfile).filter((Userfile.folder == user_id), (Userfile.name == file_name_tmp)).first()
+        if elements is None:
+            dbSession.remove()
+            return "404"
+        if storageinterface.file_exists(user_id, file_name_tmp):
+            # get tmp file that was saved before
 
-        # get value of tmp file
-        tmp_value = storageinterface.download_file_to_text(user.get_id(), file_name+"_tmp")
+            # get value of tmp file
+            tmp_value = storageinterface.download_file_to_text(user_id, file_name_tmp)
 
-
-        # delete tmp file
-        # storageinterface.delete_file(user.get_id, file_name_tmp)
-        # TODO deleting the tmp file is not working somehow
+            # delete tmp file
+            storageinterface.delete_file(user_id, file_name_tmp)
+            # no cascade possible, therfore we must remove the foreign-key there manually
+            references = dbSession.query(UserUserfile).filter(UserUserfile.userfile_id == elements.id)
+            for ref in references:
+                dbSession.delete(ref)
+            dbSession.delete(elements)
+            dbSession.commit()
+            dbSession.remove()
 
         print("-------------------------------------------------------------")
         print("Received an external POST in order to save following file")
         print("content: " + tmp_value)
         print("user email: " + user_email)
-        print("bucketid: " + str(user.get_id()))
         print("file_name: " + file_name)
         print("-------------------------------------------------------------")
 
         response = "500"
-        if storageinterface.upload_from_text(user.id, file_name, tmp_value):
+        if storageinterface.upload_from_text(user_id, file_name, tmp_value):
             response = "200"
-            file_string = "saveFile/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            file_string = "saveFile/" + str(user_id) + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
             etcd_client.write(file_string, 3)
         dbSession.remove()
