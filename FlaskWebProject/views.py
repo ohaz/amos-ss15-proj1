@@ -1200,11 +1200,12 @@ def rest_syncfile_save_file_tmp(user_email, file_name):
         # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
         userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
         user = dbSession.query(User).filter(User.email == user_email).first()
-        print("-------------> found user with email : " + user_email + " and bucket id : " + user.get_id())
+        user_id = user.get_id()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user_id)
         if userfile is None:
             if user is None:
                 return "403"  # Forbidden
-            userfile = Userfile(user.get_id(), file_name)
+            userfile = Userfile(user_id, file_name)
             useruserfile = UserUserfile(userfile, user, 6)
             dbSession.add(userfile)
             dbSession.add(useruserfile)
@@ -1212,7 +1213,7 @@ def rest_syncfile_save_file_tmp(user_email, file_name):
 
         # if file exists -> check if file_name, user_id is found with right permission in UserUserfiles
         else:
-            useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
+            useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user_id,
                                                                 UserUserfile.userfile_id == userfile.id).first()
             if useruserfile is None or useruserfile.permission < 6:
                 print("return 403")
@@ -1224,14 +1225,14 @@ def rest_syncfile_save_file_tmp(user_email, file_name):
         print("Received an external POST in order to save following file temporarily")
         print("content: " + content)
         print("user email: " + user_email)
-        print("bucketid: " + str(user.get_id()))
+        print("bucketid: " + str(user_id))
         print("file_name: " + file_name)
         print("-------------------------------------------------------------")
 
         response = "500"
-        if storageinterface.upload_from_text(user.id, file_name, content):
+        if storageinterface.upload_from_text(user_id, file_name, content):
             response = "200"
-            file_string = "saveFile_tmp/" + str(user.id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            file_string = "saveFile_tmp/" + str(user_id) + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
             etcd_client.write(file_string, 2)
         dbSession.remove()
