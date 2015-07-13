@@ -96,7 +96,7 @@ http {
 ./etc/nginx/conf.d/amos1.conf
 
 ----
-upstream amos1 {
+upstream amos1.<your_domain> {
     ip_hash;
     server azure.<your_domain>;
     server aws.<your_domain>;
@@ -109,7 +109,7 @@ server {
     server_name <your_domain>;
 
     location / {
-        proxy_pass http://amos1;
+        proxy_pass http://amos1.<your_domain>;
     }
 }
 
