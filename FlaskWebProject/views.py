@@ -787,9 +787,9 @@ def rest_upload_from_text(bucket_id, file_name):
         data = {
             'content': content
         }
-
+        email = current_user.email
         # create file string with _tmp suffix
-        file_string_tmp = "saveFile_tmp/" + str(user.id) + '_' + file_name + '_tmp/'
+        file_string_tmp = "saveFile_tmp/" + email + '_' + file_name + '_tmp/'
         async_receive_queue = Queue()
         thread_listen_receive_list = []
         thread_counter_clouds = 0
@@ -804,7 +804,7 @@ def rest_upload_from_text(bucket_id, file_name):
                 thread_counter_clouds = thread_counter_clouds + 1
 
         async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                     '/storage/api/v1.0/syncfile/savefile_tmp/' + current_user.email + '/' + file_name)
+                                     '/storage/api/v1.0/syncfile/savefile_tmp/' + email + '/' + file_name)
         async_send_data.daemon = True
         async_send_data.start()
         print "+++++ send save file temp data to clouds"
@@ -821,7 +821,7 @@ def rest_upload_from_text(bucket_id, file_name):
                     etcd_cloud_hoster[r][0] = True
         print"++++++++ all clouds have saved the file temporarily"
 
-        file_string = "saveFile/" + str(user.id) + '_' + file_name + '/'
+        file_string = "saveFile/" + email + '_' + file_name + '/'
         async_receive_queue = Queue()
         thread_listen_receive_list = []
         thread_counter_clouds = 0
@@ -836,7 +836,7 @@ def rest_upload_from_text(bucket_id, file_name):
                 thread_counter_clouds = thread_counter_clouds + 1
 
         async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                     '/storage/api/v1.0/syncfile/savefile/' + current_user.email + '/' + file_name)
+                                     '/storage/api/v1.0/syncfile/savefile/' + email + '/' + file_name)
         async_send_data.daemon = True
         async_send_data.start()
         print "+++++ send save file data to clouds"
@@ -1232,7 +1232,7 @@ def rest_syncfile_save_file_tmp(user_email, file_name):
         response = "500"
         if storageinterface.upload_from_text(user_id, file_name, content):
             response = "200"
-            file_string = "saveFile_tmp/" + str(user_id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            file_string = "saveFile_tmp/" + user_email + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
             etcd_client.write(file_string, 2)
         dbSession.remove()
@@ -1298,7 +1298,7 @@ def rest_syncfile_save_file(user_email, file_name):
         response = "500"
         if storageinterface.upload_from_text(user_id, file_name, tmp_value):
             response = "200"
-            file_string = "saveFile/" + str(user_id) + '_' + file_name + '/' + 'ack_' + cloudplatform
+            file_string = "saveFile/" + user_email + '_' + file_name + '/' + 'ack_' + cloudplatform
             etcd_client = init_etcd_connection()
             etcd_client.write(file_string, 3)
         dbSession.remove()
