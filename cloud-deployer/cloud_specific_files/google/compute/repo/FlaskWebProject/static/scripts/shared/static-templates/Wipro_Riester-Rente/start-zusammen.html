@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>DATEV Wipro Riester-Rente-Rechner (Start)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link rel="stylesheet" href="../../css/datev-mobile.css">
+  </head>
+  <body class="bg-detail">
+
+    <ul class="grouped-list">
+ 
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Veranlagungsjahr</span>
+          <span class="supplemental">2012</span>
+          <select>
+            <option selected>2012</option>
+            <option>2011</option>
+            <option>2010</option>
+            <option>2009</option>
+            <option>2008</option>
+            <option>2007</option>
+            <option>2006</option>
+            <option>2005</option>
+            <option>2004</option>
+            <option>2003</option>
+            <option>2002</option>
+          </select>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Veranlagungsform</span>
+          <span class="supplemental">Einzel</span>
+          <select>
+            <option selected>Einzel</option>
+            <option>Zusammen</option>
+          </select>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Einkommen in €</span>
+          <span class="supplemental">
+            <input type="number" value="0">
+          </span>
+        </label>
+      </li>
+    </ul>
+    
+    
+    <div class="type-area">
+      <div class="tabs">
+        <a href="#" class="tab selected">
+          <span class="tab-label">Steuerpflichtiger 1</span>
+        </a>
+        <a href="#" class="tab">
+          <span class="tab-label">Steuerpflichtiger 2</span>
+        </a>
+      </div>
+    </div>    
+    
+    
+    <ul class="grouped-list">
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label"><abbr title="unmittelbar zulagenbegünstigt"><span>unm. zulagenbeg.</span></abbr></span>
+          <span class="supplemental cb-wrapper">
+            <input type="checkbox" class="cb">
+            <span></span>
+          </span>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label"><abbr title="abgeschlossener Vorsorgevertrag"><span>abgeschl. Vertrag</span></abbr></span>
+          <span class="supplemental cb-wrapper">
+            <input type="checkbox" class="cb">
+            <span></span>
+          </span>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label"><abbr title="beitragspflichtige Einnahmen (Vorjahr) in €"><span>betragspfl.Einn.(VJ)</span></abbr></span>
+          <span class="supplemental">
+            <input type="number" value="10000">
+          </span>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Anzahl Kinder vor 2008</span>
+          <span class="supplemental">
+            <input type="number" value="0">
+          </span>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Anzahl Kinder ab 2008</span>
+          <span class="supplemental">
+            <input type="number" value="0">
+          </span>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Geleistete Beiträge in €</span>
+          <span class="supplemental">
+            <input type="number" value="10000">
+          </span>
+        </label>
+      </li>
+    </ul>
+    
+    <div class="type-area emph table-disclosure">
+     <table>
+       <tbody>
+         <tr>
+           <th class="text-left">Mindesteigenbetrag</th>
+           <td>
+                0
+           </td>  
+         </tr>
+         <tr>
+           <th class="text-left">Zulagenanspruch</th>
+           <td>
+                0
+           </td>  
+         </tr>
+
+       </tbody>      
+      </table> 
+    </div> 
+
+    <div class="type-area">
+      <button class="wide petrol" onclick="location='guenstigerpruefung.html'">Günstigerprüfung</button>
+    </div>
+    
+
+  </body>
+</html>

@@ -1,0 +1,92 @@
+/* -- alte Version mit % Angabe
+.bg-detail {
+  background-color: #bebebe;
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(.02, #c8c8c8), color-stop(.3, #ececec), color-stop(.74, #bebebe));
+  background-image: -webkit-linear-gradient(top, #c8c8c8 2%, #ececec 30%, #bebebe 74%);
+  background-image:    -moz-linear-gradient(top, #c8c8c8 2%, #ececec 30%, #bebebe 74%);
+  background-image:     -ms-linear-gradient(top, #c8c8c8 2%, #ececec 30%, #bebebe 74%);
+  background-image:      -o-linear-gradient(top, #c8c8c8 2%, #ececec 30%, #bebebe 74%);
+  background-image:         linear-gradient(top, #c8c8c8 2%, #ececec 30%, #bebebe 74%);
+  background-repeat: no-repeat;
+  background-attachment:fixed;
+}
+*/
+
+.bg-detail {
+  background-color: #C8C8C8;
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(10px, #c8c8c8), color-stop(195px, #F7F7F7), color-stop(429px, #E0E0E0));
+  background-image: -webkit-linear-gradient(top, #c8c8c8 10px, #F7F7F7 195px, #E0E0E0 429px);
+  background-image:    -moz-linear-gradient(top, #c8c8c8 10px, #F7F7F7 195px, #E0E0E0 429px);
+  background-image:     -ms-linear-gradient(top, #c8c8c8 10px, #F7F7F7 195px, #E0E0E0 429px);
+  background-image:      -o-linear-gradient(top, #c8c8c8 10px, #F7F7F7 195px, #E0E0E0 429px);
+  background-image:         linear-gradient(top, #c8c8c8 10px, #F7F7F7 195px, #E0E0E0 429px);
+  background-repeat: no-repeat;
+  background-attachment:fixed;
+}
+
+@mixin gradient-important {
+  &, & a {
+    color: $c-grey-dark-2;
+  }
+
+  @include vertical-gradient(#95d45e, #81c14a, #32b100);
+}
+
+@mixin gradient-tabs {
+  background-color: #e6e6e6;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#f9f9f9), color-stop(.5, #e3e3e3), color-stop(.5, #d9d9d9), to(#d9d9d9));
+  background-image: -webkit-linear-gradient(top, #f9f9f9, #e3e3e3 50%, #d9d9d9 50%, #d9d9d9);
+  background-image:	   -moz-linear-gradient(top, #f9f9f9, #e3e3e3 50%, #d9d9d9 50%, #d9d9d9);
+  background-image:		-ms-linear-gradient(top, #f9f9f9, #e3e3e3 50%, #d9d9d9 50%, #d9d9d9);
+  background-image:		 -o-linear-gradient(top, #f9f9f9, #e3e3e3 50%, #d9d9d9 50%, #d9d9d9);
+  background-image:			linear-gradient(top, #f9f9f9, #e3e3e3 50%, #d9d9d9 50%, #d9d9d9);
+}
+
+@mixin gradient-tabs-selected {
+  background-color: #32b100;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#c3f2af), color-stop(.5, #4bbb0e), color-stop(.5, #2eb100), to(#2eb100));
+  background-image: -webkit-linear-gradient(top, #c3f2af, #4bbb0e 50%, #2eb100 50%, #2eb100);
+  background-image:	   -moz-linear-gradient(top, #c3f2af, #4bbb0e 50%, #2eb100 50%, #2eb100);
+  background-image:		-ms-linear-gradient(top, #c3f2af, #4bbb0e 50%, #2eb100 50%, #2eb100);
+  background-image:		 -o-linear-gradient(top, #c3f2af, #4bbb0e 50%, #2eb100 50%, #2eb100);
+  background-image:			linear-gradient(top, #c3f2af, #4bbb0e 50%, #2eb100 50%, #2eb100);
+}
+
+@mixin gradient-important-inverse {
+  &, & a {
+    color: #fff;
+  }
+
+  background-color: #32b100;
+  background-image: -webkit-gradient(linear, left top, left bottom, from(#2eb100), color-stop(.5, #32b100), color-stop(.5, #4bbb0e), to(#c3f2af));
+  background-image: -webkit-linear-gradient(top, #2eb100, #32b100 50%, #4bbb0e 50%, #c3f2af);
+  background-image:	   -moz-linear-gradient(top, #2eb100, #32b100 50%, #4bbb0e 50%, #c3f2af);
+  background-image:		-ms-linear-gradient(top, #2eb100, #32b100 50%, #4bbb0e 50%, #c3f2af);
+  background-image:		 -o-linear-gradient(top, #2eb100, #32b100 50%, #4bbb0e 50%, #c3f2af);
+  background-image:			linear-gradient(top, #2eb100, #32b100 50%, #4bbb0e 50%, #c3f2af);
+}
+
+@mixin gradient-important-tapped {
+  &, & a {
+    color: $c-grey-dark-2;
+  }
+
+  @include vertical-gradient(#7fc046, #649a34, #32b100);
+}
+
+
+@mixin gradient-reset {
+  &, & a {
+    color: $c-grey-dark-2;
+  }
+
+  @include vertical-gradient(#fbfbfa, #dddcdb, #dcdcdb);
+}
+
+@mixin gradient-reset-tapped {
+  &, & a {
+    color: $c-grey-dark-2;
+  }
+
+  @include vertical-gradient(#fbfbfa, #cef0a6, #32b100);
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>DATEV Wipro Brutto-Netto-Rechner (Start)</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+    <link rel="stylesheet" href="../../css/datev-mobile.css">
+  </head>
+  <body class="bg-detail">
+
+    <ul class="grouped-list">
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Veranlagungsjahr</span>
+          <span class="supplemental">2011</span>
+          <select>
+            <option>2009</option>
+            <option>2010</option>
+            <option selected>2011</option>
+            <option>2012</option>
+          </select>
+        </label>
+      </li>
+      <li class="item-simple">
+        <label class="item-wrapper">
+          <span class="item-label">Lohnzahlungszeitraum</span>
+          <span class="supplemental">monatlich</span>
+          <select>
+            <option selected>monatlich</option>
+            <option>jährlich</option>
+          </select>
+        </label>
+      </li>
+    </ul>
+
+    <div class="type-area">
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>
+              <a class="detail-disclosure" href="settings-1.html">
+                <abbr title="Steuerpflichtiger"><span>Stpfl.</span></abbr> 1
+              </a>
+            </th>
+            <th>
+              <a class="detail-disclosure" href="settings-2.html">
+                <abbr title="Steuerpflichtiger"><span>Stpfl.</span></abbr> 2
+              </a>
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th class="emph"><abbr title="Steuerklasse"><span>Steuerkl.</span></abbr></th>
+            <td class="td-input">
+              <select class="text-input">
+                <option>I</option>
+                <option>II</option>
+                <option>III</option>
+                <option>IV</option>
+              </select>
+            </td>
+            <td class="td-input">
+              <select class="text-input">
+                <option>I</option>
+                <option>II</option>
+                <option>III</option>
+                <option>IV</option>
+              </select>
+            </td>
+          </tr>
+          <tr>
+            <th class="emph"><abbr title="Brutto-Lohn"><span>Brutto</span></abbr></th>
+            <td class="td-input">
+              <input type="number" class="text-input">
+            </td>
+            <td class="td-input">
+              <input type="number" class="text-input">
+            </td>
+          </tr>
+        </tbody>
+        <tbody class="detail">
+          <tr>
+            <th>Lohnsteuer</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr>
+            <th>Solidaritätszuschlag</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr>
+            <th>Kirchensteuer</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr class="sum">
+            <th>ST-Summe</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+        </tbody>
+        <tbody class="detail">
+          <tr>
+            <th>Krankenversicherung</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr>
+            <th>Pflegeversicherung</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr>
+            <th>Rentenversicherung</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr class="sum">
+            <th>SV-Summe</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+        </tbody>
+        <tbody class="summary">
+          <tr>
+            <th class="emph nowrap">ST-Abzug</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+          <tr>
+            <th class="emph nowrap">SV-Abzug</th>
+            <td>999.999,99</td>
+            <td>999.999,99</td>
+          </tr>
+        </tbody>
+        <tbody>
+          <tr>
+            <th class="emph"><abbr title="Netto-Lohn"><span>Netto</span></abbr></th>
+            <td class="td-input">
+              <input type="number" class="text-input">
+            </td>
+            <td class="td-input">
+              <input type="number" class="text-input">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="type-area margin-bottom-4">
+      <a href="details.html" class="button button--action wide">ST- und SV-Details</a>
+
+    </div>
+    <div class="type-area">
+      <a href="vergleich.html" class="button button--action wide">Steuerklassen-Vergleich</a>
+    </div>
+
+  </body>
+</html>
