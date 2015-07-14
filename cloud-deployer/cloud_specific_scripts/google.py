@@ -61,7 +61,7 @@ def apply_remote():
             subprocess.call(command)
             
             #copy configfiles of google_remote to our repo
-            command = ["cp","-r",os.path.join(source,"repo_google",".git"), os.path.join(source,"repo",".git")]
+            command = ["cp","-f","-r",os.path.join(source,"repo_google",".git"), os.path.join(source,"repo",".git")]
             subprocess.call(command)
 
             # add everything, I mean really everything in this repo to our next commit

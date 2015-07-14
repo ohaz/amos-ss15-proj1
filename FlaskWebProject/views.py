@@ -500,7 +500,12 @@ def facebook_authorized(resp):
         # TODO: excalate error to user: 'There was a problem logging in with
         # Google.'
         return redirect(next_url)
-    session['oauth_token'] = (resp['access_token'], '')
+    
+    try: 
+        session['oauth_token'] = (resp['access_token'], '') 
+    except: 
+        return "400"
+    
     user_data = facebook.get('/me').data
     user = dbSession.query(User).filter(User.email == user_data['email']).first()
 
@@ -581,7 +586,12 @@ def google_authorized(resp):
         # TODO: excalate error to user: 'There was a problem logging in with
         # Google.'
         return redirect(next_url)
-    session['oauth_token'] = (resp['access_token'], '')
+    
+    try: 
+        session['oauth_token'] = (resp['access_token'], '') 
+    except: 
+        return "400"
+    
     user_data = google.get('/userinfo/v2/me').data
     user = dbSession.query(User).filter(User.email == user_data['email']).first()
 
