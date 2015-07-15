@@ -32,6 +32,8 @@ def deploy():
         print('Canceling Azure')
         return
     print(' > > Copying downloaded files into repo')
+    
+    shutil.rmtree(os.path.join(OWN_FOLDER,'repo', '.git'))
     distutils.dir_util.copy_tree(os.path.join(OWN_FOLDER, 'repo'), os.path.join(OWN_FOLDER, 'azure_repo'))
     distutils.file_util.copy_file(os.path.join(OWN_FOLDER, 'config.py'), os.path.join(OWN_FOLDER, 'azure_repo', 'config.py'))
     print(' Adding files to git')
