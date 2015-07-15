@@ -166,7 +166,10 @@ def list_files(Bucket):  # list/list_next
 def upload_from_text(Bucket, Filename, File):
     global GS_storage
     Bucket = GS_identifier+str(Bucket)
-
+    
+    if not isinstance(File, unicode):
+        File = unicode(File,"utf-8")
+    
     def call_upload_file(Bucket, Filename, File):  # get MEDIA
         FileObject = StringIO(File)
         media_body = MediaIoBaseUpload(

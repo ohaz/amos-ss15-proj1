@@ -40,6 +40,8 @@ We solved this by adding a second "server" keyword and telling it to handle the 
 
 This solved the issue. So, if, for whatever reason, the upstream way does not work directly, just add another server {} part, similar to the azure one, and replace the upstream -> server by the same string you add in server -> server_name.
 
+We also did the same for AWS, because we don't know if AWS does load balancing via URL or via IP internally. Using the URL instead of the IP definitely works.
+
 == Appendix ==
 
 [[nginx.conf]]
@@ -94,10 +96,10 @@ http {
 ./etc/nginx/conf.d/amos1.conf
 
 ----
-upstream amos1 {
+upstream amos1.<your_domain> {
     ip_hash;
     server azure.<your_domain>;
-    server <awsdomain>;
+    server aws.<your_domain>;
     server <googledomain>;
 
 }
@@ -107,7 +109,7 @@ server {
     server_name <your_domain>;
 
     location / {
-        proxy_pass http://amos1;
+        proxy_pass http://amos1.<your_domain>;
     }
 }
 
@@ -117,6 +119,15 @@ server {
 
     location / {
         proxy_pass http://<azure_domain>;
+    }
+}
+
+server {
+    listen 80;
+    server_name aws.<your_domain>;
+    
+    location / {
+        proxy_pass http://<awsdomain>;
     }
 }
 ----

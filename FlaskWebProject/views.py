@@ -16,14 +16,13 @@ from .forms import LoginForm, RegisterForm
 from .models import User, Userfile, UserUserfile
 from FlaskWebProject import storageinterface
 import etcd
-from etcd import EtcdNotFile
+from etcd import EtcdNotFile, EtcdKeyNotFound, EtcdException
 from config import etcd_member
 from config import cloud_hoster
 # from etcd import EtcdException
 from config import cloudplatform
 from sqlalchemy.orm import sessionmaker, scoped_session
 from multiprocessing import Queue
-
 
 # Global constants
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -60,6 +59,118 @@ class RegexConverter(BaseConverter):
 app.url_map.converters['regex'] = RegexConverter
 
 
+@auto_logger
+def db_cloud_sync(key_path, rest_url, data):
+    etcd_client = init_etcd_connection()
+
+    async_ready_queue = Queue()
+    thread_listen_ready_list = []
+    thread_counter_clouds = 0
+    for hoster in cloud_hoster:
+        if cloud_hoster[hoster][1] is not None:
+            hoster_string_ready = "/" + key_path + "ack_" + hoster
+            # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
+            print "db_cloud_sync: for hoster: " + hoster + " hoster_string_ready: " + hoster_string_ready
+            pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
+            pros.daemon = True
+            pros.start()
+            thread_listen_ready_list.append(pros)
+            thread_counter_clouds = thread_counter_clouds + 1
+    try:
+        print "db_cloud_sync: try write path: " + key_path
+        etcd_client.write(key_path, "", dir=True)
+    except EtcdNotFile:
+        # TODO Threads muessen noch beendet werden
+        print "db_cloud_sync: except EtcdNotFile!"
+        res_written_data = -1
+        return res_written_data
+    else:
+        print "db_cloud_sync: wait for all listen_ack processes...."
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
+
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_ready_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+
+        print "db_cloud_sync: ack listener finished..."
+
+        async_receive_queue = Queue()
+        thread_listen_receive_list = []
+        thread_counter_clouds = 0
+        for hoster in etcd_cloud_hoster:
+            print " db_cloud_sync: for hoster: " + hoster
+            if etcd_cloud_hoster[hoster][1]:  # what does this?
+                hoster_string_ready = "/" + key_path + "ack_" + hoster
+                print "  db_cloud_sync: for hoster: hoster_string_ready:" + hoster_string_ready
+                pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
+                                  async_receive_queue, "2")
+                pros.daemon = True
+                pros.start()
+                thread_listen_receive_list.append(pros)
+                thread_counter_clouds = thread_counter_clouds + 1
+
+        async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data, rest_url)
+        async_send_data.daemon = True
+        async_send_data.start()
+        print "db_cloud_sync: send registration data to clouds"
+
+        # wait for all listen_ack processes
+        for p in thread_listen_receive_list:
+            p.join()
+
+        # evaluate results from queue
+        res_receive_data = 1
+        for i in range(0, thread_counter_clouds):
+            result = async_receive_queue.get()
+            for r in result:
+                if not result[r][0]:
+                    res_receive_data = -1
+
+        print "db_cloud_sync: result receiving data: " + str(res_receive_data)
+
+        commit_string = key_path + 'commit'
+        if res_receive_data == -1:
+            etcd_client.write(commit_string, 0)
+            # return that writting was not successfull
+            res_written_data = -1
+        else:
+
+            async_written_queue = Queue()
+            thread_listen_written_list = []
+            thread_counter_clouds = 0
+            for hoster in etcd_cloud_hoster:
+                if etcd_cloud_hoster[hoster][1]:
+                    hoster_string_ready = "/" + key_path + "ack_" + hoster
+                    pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
+                                      async_written_queue, "3")
+                    pros.daemon = True
+                    pros.start()
+                    thread_listen_written_list.append(pros)
+                    thread_counter_clouds = thread_counter_clouds + 1
+
+            etcd_client.write(commit_string, 1)
+            # wait for all listen_ack processes
+            for p in thread_listen_written_list:
+                p.join()
+
+            # evaluate results from queue
+            res_written_data = 1
+            for i in range(0, thread_counter_clouds):
+                result = async_written_queue.get()
+                for r in result:
+                    if not result[r][0]:
+                        res_written_data = -1
+
+            print "db_cloud_sync: result of written data to db: " + str(res_written_data)
+    return res_written_data
+
+
 def init_etcd_connection():
     etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
     # etcd_client.machines
@@ -70,17 +181,16 @@ def listen_ready_ack(client, user_key, platform, queue):
     cloud_hoster_local = cloud_hoster
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
-        unirest.timeout(10)
+        print "listen_ready_ack: wait url: " + url
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Ready ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "#####################################"
+        print "listen_ready_ack: platform: " + platform + " New Key: " + new_item['key']
         cloud_hoster_local[platform][0] = True
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ready_ack: Timeout exception platform: " + platform
         cloud_hoster_local[platform][0] = False
     finally:
         queue.put(cloud_hoster_local)
@@ -92,16 +202,14 @@ def unirest_callback(response):
 
 
 def send_sync_data(host_list, data, rest_interface):
-    print "----- Begin to send data to the clouds -----"
+    print "send_sync_data: start sync data.."
     data_json = json.dumps(data)
     header = {'Content-Type': 'application/json'}
     for cloud in host_list:
         if host_list[cloud][0]:
             host_url = "http://" + host_list[cloud][1] + rest_interface
-            print "----- host URL: " + host_url + " -----"
+            print "send_sync_data: host URL: " + host_url + " "
             unirest.post(host_url, headers=header, params=data_json, callback=unirest_callback)
-            print "----- posted data to " + host_url + " -----"
-    print "----- finished sending data ---------"
 
 
 def listen_ack_receiving_data(client, user_key, platform, queue):
@@ -109,21 +217,66 @@ def listen_ack_receiving_data(client, user_key, platform, queue):
     receive_result = {platform: [False]}
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
-        unirest.timeout(10)
+        print "listen_ack_receiving_data: wait url: " + url
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Receive ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_ack_receiving_data: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         if new_item['value'] == "2":
             receive_result[platform][0] = True
         else:
             receive_result[platform][0] = False
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_ack_receiving_data: Timeout exception platform: " + platform
+        receive_result[platform][0] = False
+    finally:
+        queue.put(receive_result)
+
+
+def listen_ack_written_data(client, user_key, platform, queue):
+    # counter = 0
+    receive_result = {platform: [False]}
+    try:
+        url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
+        print "listen_ack_written_data: wait url: " + url
+        unirest.timeout(20)
+        etcd_response = unirest.get(url)
+        new_item = etcd_response.body['node']
+        # TODO: should be exported to new thread
+        print "listen_ack_written_data: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
+        if new_item['value'] == "3":
+            receive_result[platform][0] = True
+        else:
+            receive_result[platform][0] = False
+    # To catch the timeout Exception form unirest when cloud does not answer
+    except Exception, e:
+        print "listen_ack_written_data: Timeout exception platform: " + platform
+        receive_result[platform][0] = False
+    finally:
+        queue.put(receive_result)
+
+@auto_logger
+def listen_ack_etcd(client, user_key, platform, queue, ack_num):
+    print "listen_ack_etcd: listen for ack_num: " + ack_num + " from platform: " + platform
+    # counter = 0
+    receive_result = {platform: [False]}
+    
+    try:
+        url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
+        print "listen_ack_etcd: wait url: " + url
+        unirest.timeout(10000)
+        etcd_response = unirest.get(url)
+        new_item = etcd_response.body['node']
+        print "listen_ack_etcd: platorm: " + platform + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
+        if new_item['value'] == ack_num:
+            receive_result[platform][0] = True
+        else:
+            receive_result[platform][0] = False
+    # To catch the timeout Exception form unirest when cloud does not answer
+    except Exception, e:
+        print "listen_ack_etcd: Timeout exception platform: " + platform
         receive_result[platform][0] = False
     finally:
         queue.put(receive_result)
@@ -132,47 +285,18 @@ def listen_ack_receiving_data(client, user_key, platform, queue):
 def listen_commit_status(client, user_key, queue):
     try:
         url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print url
-        print "wait url: " + url
-        unirest.timeout(10)
+        unirest.timeout(20)
         etcd_response = unirest.get(url)
         new_item = etcd_response.body['node']
         # TODO: should be exported to new thread
-        print "######### Listen to Commit ACK #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
+        print "listen_commit_status: url: " + url + " New Key: " + new_item['key'] + " New Value: " + new_item['value']
         ret_val = new_item['value']
     # To catch the timeout Exception form unirest when cloud does not answer
     except Exception, e:
+        print "listen_commit_status: Timeout exception: " + url
         ret_val = "0"
     finally:
         queue.put(ret_val)
-
-
-def listen_ack_written_data(client, user_key, platform, queue):
-    # counter = 0
-    receive_result = {platform: [False]}
-    try:
-        url = "http://" + etcd_member[0] + ":4001/v2/keys" + user_key + "?wait=true"
-        print "wait url: " + url
-        unirest.timeout(10)
-        etcd_response = unirest.get(url)
-        new_item = etcd_response.body['node']
-        # TODO: should be exported to new thread
-        print "######### Listen to Written ACKs from " + platform + " #######"
-        print "New Key: " + new_item['key']
-        print "New Value: " + new_item['value']
-        print "#####################################"
-        if new_item['value'] == "3":
-            receive_result[platform][0] = True
-        else:
-            receive_result[platform][0] = False
-    # To catch the timeout Exception form unirest when cloud does not answer
-    except Exception, e:
-        receive_result[platform][0] = False
-    finally:
-        queue.put(receive_result)
 
 
 # Function for LoginManager to get a user with specific id
@@ -185,6 +309,7 @@ def load_user(id):
     :param string/int id: the id of the user to load
     """
     user = dbSession.query(User).filter(User.id == int(id)).first()
+    dbSession.remove()
     return user
 
 
@@ -243,11 +368,13 @@ def login():
                 if password == hashlib.sha256(salt.encode() + request.form['password'].encode()).hexdigest():
                     session['remember_me'] = form.remember_me.data
                     login_user(user)
+                    dbSession.remove()
                     return redirect(request.args.get('next') or url_for('home'))
                 else:
                     error = 'Invalid password'
             else:
                 error = 'Invalid username'
+    dbSession.remove()
     return render_template('login.html', form=form, error=error)
 
 
@@ -274,129 +401,34 @@ def register():
         elif email is not None:
             error = 'email was already used'
         else:
-            etcd_client = init_etcd_connection()
             user_string = "registerUser/" + form.username.data + '/'
-
-            async_ready_queue = Queue()
-            thread_listen_ready_list = []
-            thread_counter_clouds = 0
-            for hoster in cloud_hoster:
-                if cloud_hoster[hoster][1] is not None:
-                    hoster_string_ready = "/" + user_string + "ack_" + hoster
-                    # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
-                    pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
-                    pros.daemon = True
-                    pros.start()
-                    thread_listen_ready_list.append(pros)
-                    thread_counter_clouds = thread_counter_clouds + 1
-            try:
-                etcd_client.write(user_string, "", dir=True)
-            except EtcdNotFile:
-                """TODO Threads muessen noch beendet werden"""
-                error = 'username is already taken'
-            else:
-                password = hashlib.sha256(
+            password = hashlib.sha256(
                     salt.encode() + form.password.data.encode()).hexdigest() + ':' + salt
-
-                # wait for all listen_ack processes
-                for p in thread_listen_ready_list:
-                    p.join()
-
-                etcd_cloud_hoster = cloud_hoster
-                # evaluate results from queue
-                for i in range(0, thread_counter_clouds):
-                    result = async_ready_queue.get()
-                    for r in result:
-                        if result[r][0]:
-                            etcd_cloud_hoster[r][0] = True
-
-                print "+++++ registerUser: ack listener finished..."
-
-                data = {
+            data = {
                     'username': form.username.data,
                     'email': form.email.data,
                     'password': password,
                     'sso': 'none'
-                }
+            }
+            rest_url = '/storage/api/v1.0/syncdb/registeruser'
 
-                async_receive_queue = Queue()
-                thread_listen_receive_list = []
-                thread_counter_clouds = 0
-                for hoster in etcd_cloud_hoster:
-                    if etcd_cloud_hoster[hoster][1]:
-                        hoster_string_ready = "/" + user_string + "ack_" + hoster
-                        pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster,
-                                          async_receive_queue)
-                        pros.daemon = True
-                        pros.start()
-                        thread_listen_receive_list.append(pros)
-                        thread_counter_clouds = thread_counter_clouds + 1
+            # call synchronization between cloud dbs
+            res_db_sync = db_cloud_sync(user_string, rest_url, data)
+            print "register: res_db_sync: " + str(res_db_sync)
 
-                async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                             '/storage/api/v1.0/syncdb/registeruser')
-                async_send_data.daemon = True
-                async_send_data.start()
-                print "+++++ send registration data to clouds"
+            if res_db_sync == -1:
+                error == '+++++ registration fails, please try it again'
+            else:
+                print "+++++ sending was successfull"
 
-                # wait for all listen_ack processes
-                for p in thread_listen_receive_list:
-                    p.join()
+                # login new user
+                dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
+                user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
 
-                # evaluate results from queue
-                res_receive_data = 1
-                for i in range(0, thread_counter_clouds):
-                    result = async_receive_queue.get()
-                    for r in result:
-                        if not result[r][0]:
-                            res_receive_data = -1
-                etcd_client.write('/azure_msg', res_receive_data)
-                print "+++++ result receiving data: " + str(res_receive_data)
-
-                commit_string = user_string + 'commit'
-                if res_receive_data == -1:
-                    etcd_client.write(commit_string, 0)
-                else:
-
-                    async_written_queue = Queue()
-                    thread_listen_written_list = []
-                    thread_counter_clouds = 0
-                    for hoster in etcd_cloud_hoster:
-                        if etcd_cloud_hoster[hoster][1]:
-                            hoster_string_ready = "/" + user_string + "ack_" + hoster
-                            pros = FuncThread(listen_ack_written_data, etcd_client, hoster_string_ready, hoster,
-                                              async_written_queue)
-                            pros.daemon = True
-                            pros.start()
-                            thread_listen_written_list.append(pros)
-                            thread_counter_clouds = thread_counter_clouds + 1
-
-                    etcd_client.write(commit_string, 1)
-                    # wait for all listen_ack processes
-                    for p in thread_listen_written_list:
-                        p.join()
-
-                    # evaluate results from queue
-                    res_written_data = 1
-                    for i in range(0, thread_counter_clouds):
-                        result = async_written_queue.get()
-                        for r in result:
-                            if not result[r][0]:
-                                res_written_data = -1
-
-                    print "+++++ result of written data to db: " + str(res_written_data)
-
-                    if res_written_data == -1:
-                        error == '+++++ registration fails, please try it again'
-                    else:
-                        print "+++++ sending was successfull"
-
-                        # login new user
-                        dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
-                        user = dbSession_new.query(User).filter(User.username == request.form['username']).first()
-
-                        login_user(user)
-                        return redirect(url_for('home'))
-
+                login_user(user)
+                dbSession.remove()
+                return redirect(url_for('home'))
+    dbSession.remove()
     return render_template('register.html', form=form, error=error)
 
 
@@ -468,135 +500,46 @@ def facebook_authorized(resp):
         # TODO: excalate error to user: 'There was a problem logging in with
         # Google.'
         return redirect(next_url)
-    session['oauth_token'] = (resp['access_token'], '')
+    
+    try: 
+        session['oauth_token'] = (resp['access_token'], '') 
+    except: 
+        return "400"
+    
     user_data = facebook.get('/me').data
     user = dbSession.query(User).filter(User.email == user_data['email']).first()
 
     if user is None:
 
-        etcd_client = init_etcd_connection()
         user_string = "registerUser/" + user_data['id'] + '/'
 
-        async_ready_queue = Queue()
-        thread_listen_ready_list = []
-        thread_counter_clouds = 0
-        for hoster in cloud_hoster:
-            if cloud_hoster[hoster][1] is not None:
-                hoster_string_ready = "/" + user_string + "ack_" + hoster
-                # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
-                pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
-                pros.daemon = True
-                pros.start()
-                thread_listen_ready_list.append(pros)
-                thread_counter_clouds = thread_counter_clouds + 1
-        try:
-            etcd_client.write(user_string, "", dir=True)
-        except EtcdNotFile:
-            """TODO Threads muessen noch beendet werden"""
-            error = 'username is already taken'
+        data = {
+            'username': user_data['id'],
+            'email': user_data['email'],
+            'password': " ",
+            'sso': 'facebook'
+        }
+
+        rest_url = '/storage/api/v1.0/syncdb/registeruser'
+
+        res_db_sync = db_cloud_sync(user_string, rest_url, data)
+
+        if res_db_sync == -1:
+            error = '+++++ registration fails, please try it again'
+            print error
         else:
-            # wait for all listen_ack processes
-            for p in thread_listen_ready_list:
-                p.join()
-
-            etcd_cloud_hoster = cloud_hoster
-            # evaluate results from queue
-            for i in range(0, thread_counter_clouds):
-                result = async_ready_queue.get()
-                for r in result:
-                    if result[r][0]:
-                        etcd_cloud_hoster[r][0] = True
-
-            print "+++++ registerUser: ack listener finished..."
-
-            data = {
-                'username': user_data['id'],
-                'email': user_data['email'],
-                'password': " ",
-                'sso': 'facebook'
-            }
-
-            async_receive_queue = Queue()
-            thread_listen_receive_list = []
-            thread_counter_clouds = 0
-            for hoster in etcd_cloud_hoster:
-                if etcd_cloud_hoster[hoster][1]:
-                    hoster_string_ready = "/" + user_string + "ack_" + hoster
-                    pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster,
-                                      async_receive_queue)
-                    pros.daemon = True
-                    pros.start()
-                    thread_listen_receive_list.append(pros)
-                    thread_counter_clouds = thread_counter_clouds + 1
-
-            async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                         '/storage/api/v1.0/syncdb/registeruser')
-            async_send_data.daemon = True
-            async_send_data.start()
-            print "+++++ send registration data to clouds"
-
-            # wait for all listen_ack processes
-            for p in thread_listen_receive_list:
-                p.join()
-
-            # evaluate results from queue
-            res_receive_data = 1
-            for i in range(0, thread_counter_clouds):
-                result = async_receive_queue.get()
-                for r in result:
-                    if not result[r][0]:
-                        res_receive_data = -1
-            etcd_client.write('/azure_msg', res_receive_data)
-            print "+++++ result receiving data: " + str(res_receive_data)
-
-            commit_string = user_string + 'commit'
-            if res_receive_data == -1:
-                etcd_client.write(commit_string, 0)
-            else:
-
-                async_written_queue = Queue()
-                thread_listen_written_list = []
-                thread_counter_clouds = 0
-                for hoster in etcd_cloud_hoster:
-                    if etcd_cloud_hoster[hoster][1]:
-                        hoster_string_ready = "/" + user_string + "ack_" + hoster
-                        pros = FuncThread(listen_ack_written_data, etcd_client, hoster_string_ready, hoster,
-                                          async_written_queue)
-                        pros.daemon = True
-                        pros.start()
-                        thread_listen_written_list.append(pros)
-                        thread_counter_clouds = thread_counter_clouds + 1
-
-                etcd_client.write(commit_string, 1)
-                # wait for all listen_ack processes
-                for p in thread_listen_written_list:
-                    p.join()
-
-                # evaluate results from queue
-                res_written_data = 1
-                for i in range(0, thread_counter_clouds):
-                    result = async_written_queue.get()
-                    for r in result:
-                        if not result[r][0]:
-                            res_written_data = -1
-
-                print "+++++ result of written data to db: " + str(res_written_data)
-
-                if res_written_data == -1:
-                    error == '+++++ registration fails, please try it again'
-                else:
-                    print "+++++ sending was successfull"
-
-                    # login new user
-                    dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
-                    user = dbSession_new.query(User).filter(User.username == user_data['id']).first()
-                    print user
-                    login_user(user)
-
+            print "+++++ sending was successfull"
+            # login new user
+            dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
+            user = dbSession_new.query(User).filter(User.username == user_data['id']).first()
+            print user
+            login_user(user)
 
     else:
         login_user(user)
+    dbSession.remove()
     return redirect(next_url)
+
 
 
 '''
@@ -643,144 +586,44 @@ def google_authorized(resp):
         # TODO: excalate error to user: 'There was a problem logging in with
         # Google.'
         return redirect(next_url)
-    session['oauth_token'] = (resp['access_token'], '')
+    
+    try: 
+        session['oauth_token'] = (resp['access_token'], '') 
+    except: 
+        return "400"
+    
     user_data = google.get('/userinfo/v2/me').data
     user = dbSession.query(User).filter(User.email == user_data['email']).first()
-    """
-    if user is None:
-        new_user = User(
-            email=user_data['email'], username=user_data['id'], password=" ", sso="google")
-        dbSession.add(new_user)
-        dbSession.commit()
-        login_user(new_user)
-    else:
-        login_user(user)
-    return redirect(next_url)
-    
-    """
+
     if user is None:
 
-        etcd_client = init_etcd_connection()
         user_string = "registerUser/" + user_data['id'] + '/'
 
-        async_ready_queue = Queue()
-        thread_listen_ready_list = []
-        thread_counter_clouds = 0
-        for hoster in cloud_hoster:
-            if cloud_hoster[hoster][1] is not None:
-                hoster_string_ready = "/" + user_string + "ack_" + hoster
-                # pros = Process(target=listen_ready_ack, args=(etcd_client, hoster_string_ready, hoster, async_ready_queue))
-                pros = FuncThread(listen_ready_ack, etcd_client, hoster_string_ready, hoster, async_ready_queue)
-                pros.daemon = True
-                pros.start()
-                thread_listen_ready_list.append(pros)
-                thread_counter_clouds = thread_counter_clouds + 1
-        try:
-            etcd_client.write(user_string, "", dir=True)
-        except EtcdNotFile:
-            # TODO Threads muessen noch beendet werden
-            error = 'username is already taken'
+        rest_url = '/storage/api/v1.0/syncdb/registeruser'
+
+        data = {
+            'username': user_data['id'],
+            'email': user_data['email'],
+            'password': " ",
+            'sso': 'google'
+        }
+
+        res_db_sync = db_cloud_sync(user_string, rest_url, data)
+
+        if res_db_sync == -1:
+            error = '+++++ registration fails, please try it again'
+            print error
         else:
-            # wait for all listen_ack processes
-            for p in thread_listen_ready_list:
-                p.join()
+            print "+++++ sending was successfull"
 
-            etcd_cloud_hoster = cloud_hoster
-            # evaluate results from queue
-            for i in range(0, thread_counter_clouds):
-                result = async_ready_queue.get()
-                for r in result:
-                    if result[r][0]:
-                        etcd_cloud_hoster[r][0] = True
-
-            print "+++++ registerUser: ack listener finished..."
-
-            data = {
-                'username': user_data['id'],
-                'email': user_data['email'],
-                'password': " ",
-                'sso': 'google'
-            }
-
-            async_receive_queue = Queue()
-            thread_listen_receive_list = []
-            thread_counter_clouds = 0
-            for hoster in etcd_cloud_hoster:
-                if etcd_cloud_hoster[hoster][1]:
-                    hoster_string_ready = "/" + user_string + "ack_" + hoster
-                    pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster,
-                                      async_receive_queue)
-                    pros.daemon = True
-                    pros.start()
-                    thread_listen_receive_list.append(pros)
-                    thread_counter_clouds = thread_counter_clouds + 1
-
-            async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                         '/storage/api/v1.0/syncdb/registeruser')
-            async_send_data.daemon = True
-            async_send_data.start()
-            print "+++++ send registration data to clouds"
-
-            # wait for all listen_ack processes
-            for p in thread_listen_receive_list:
-                p.join()
-
-            # evaluate results from queue
-            res_receive_data = 1
-            for i in range(0, thread_counter_clouds):
-                result = async_receive_queue.get()
-                for r in result:
-                    if not result[r][0]:
-                        res_receive_data = -1
-            etcd_client.write('/azure_msg', res_receive_data)
-            print "+++++ result receiving data: " + str(res_receive_data)
-
-            commit_string = user_string + 'commit'
-            if res_receive_data == -1:
-                etcd_client.write(commit_string, 0)
-            else:
-
-                async_written_queue = Queue()
-                thread_listen_written_list = []
-                thread_counter_clouds = 0
-                for hoster in etcd_cloud_hoster:
-                    if etcd_cloud_hoster[hoster][1]:
-                        hoster_string_ready = "/" + user_string + "ack_" + hoster
-                        pros = FuncThread(listen_ack_written_data, etcd_client, hoster_string_ready, hoster,
-                                          async_written_queue)
-                        pros.daemon = True
-                        pros.start()
-                        thread_listen_written_list.append(pros)
-                        thread_counter_clouds = thread_counter_clouds + 1
-
-                etcd_client.write(commit_string, 1)
-                # wait for all listen_ack processes
-                for p in thread_listen_written_list:
-                    p.join()
-
-                # evaluate results from queue
-                res_written_data = 1
-                for i in range(0, thread_counter_clouds):
-                    result = async_written_queue.get()
-                    for r in result:
-                        if not result[r][0]:
-                            res_written_data = -1
-
-                print "+++++ result of written data to db: " + str(res_written_data)
-
-                if res_written_data == -1:
-                    error == '+++++ registration fails, please try it again'
-                else:
-                    print "+++++ sending was successfull"
-
-                    # login new user
-                    dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
-                    user = dbSession_new.query(User).filter(User.email == user_data['email']).first()
-                    login_user(user)
-
+            # login new user
+            dbSession_new = scoped_session(sessionmaker(autocommit=False, bind=dbEngine))
+            user = dbSession_new.query(User).filter(User.email == user_data['email']).first()
+            login_user(user)
 
     else:
         login_user(user)
+    dbSession.remove()
     return redirect(next_url)
 
 
@@ -811,6 +654,7 @@ def rest_list_files(bucket_id):
         data.append(_iter_[0])
     json_string = json.dumps(data)
     # print(json_string)
+    dbSession.remove()
     return json_string
 
 
@@ -840,6 +684,7 @@ def rest_delete_container(bucket_id):
     dbSession.delete(user)
     dbSession.commit()
     storageinterface.delete_container(bucket_id)
+    dbSession.remove()
     return "200"
 
 
@@ -863,13 +708,18 @@ def rest_download_file_to_text(bucket_id, file_name):
                                                               Userfile.folder == bucket_id).first()
 
     if userfile is None:
+        dbSession.remove()
         return "404"  # Not found
     if int(userfile.UserUserfile.permission) < 4:
+        dbSession.remove()
         return "403"
+
     value = storageinterface.download_file_to_text(bucket_id, file_name)
+
     if value is None:  # FIXME wat do in this case?
         print('Database out of synch with storage!')
-        return "404"
+        value = ""
+    dbSession.remove()
     return value
 
 
@@ -891,6 +741,7 @@ def rest_upload_from_text(bucket_id, file_name):
     user = dbSession.query(User).filter(User.id == bucket_id).first()
     if userfile is None:
         if user is None:
+            dbSession.remove()
             return "403"  # Forbidden
             # userfile = Userfile(bucket_id, file_name)
             # useruserfile = UserUserfile(userfile, user, 6)
@@ -903,11 +754,13 @@ def rest_upload_from_text(bucket_id, file_name):
         useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
                                                             UserUserfile.userfile_id == userfile.id).first()
         if useruserfile is None or useruserfile.permission < 6:
+            dbSession.remove()
             return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
     content = request.json['content']
     etcd_client = init_etcd_connection()
-    file_string = "saveFile/" + user.id + '_' + file_name + '/'
+    file_string = "saveFile/" + str(user.id) + '_' + file_name + '/'
+    # file_string = "saveFile/" + file_name + '/' # 150706 lars - zur besseren Unterscheidung der Dateien.
 
     async_ready_queue = Queue()
     thread_listen_ready_list = []
@@ -944,40 +797,77 @@ def rest_upload_from_text(bucket_id, file_name):
         data = {
             'content': content
         }
-
+        email = current_user.email
+        # create file string with _tmp suffix
+        file_string_tmp = "saveFile_tmp/" + email + '_' + file_name + '_tmp/'
         async_receive_queue = Queue()
         thread_listen_receive_list = []
         thread_counter_clouds = 0
         for hoster in etcd_cloud_hoster:
             if etcd_cloud_hoster[hoster][1]:
-                hoster_string_ready = "/" + file_string + "ack_" + hoster
-                pros = FuncThread(listen_ack_receiving_data, etcd_client, hoster_string_ready, hoster,
-                                  async_receive_queue)
+                hoster_string_ready = "/" + file_string_tmp + "ack_" + hoster
+                pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
+                                  async_receive_queue, "2")
                 pros.daemon = True
                 pros.start()
                 thread_listen_receive_list.append(pros)
                 thread_counter_clouds = thread_counter_clouds + 1
 
         async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
-                                     '/storage/api/v1.0/syncfile/savefile/' + str(bucket_id) + '/' + file_name)
+                                     '/storage/api/v1.0/syncfile/savefile_tmp/' + email + '/' + file_name)
+        async_send_data.daemon = True
+        async_send_data.start()
+        print "+++++ send save file temp data to clouds"
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
+
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_receive_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+        print"++++++++ all clouds have saved the file temporarily"
+
+        file_string = "saveFile/" + email + '_' + file_name + '/'
+        async_receive_queue = Queue()
+        thread_listen_receive_list = []
+        thread_counter_clouds = 0
+        for hoster in etcd_cloud_hoster:
+            if etcd_cloud_hoster[hoster][1]:
+                hoster_string_ready = "/" + file_string + "ack_" + hoster
+                pros = FuncThread(listen_ack_etcd, etcd_client, hoster_string_ready, hoster,
+                                  async_receive_queue, "3")
+                pros.daemon = True
+                pros.start()
+                thread_listen_receive_list.append(pros)
+                thread_counter_clouds = thread_counter_clouds + 1
+
+        async_send_data = FuncThread(send_sync_data, etcd_cloud_hoster, data,
+                                     '/storage/api/v1.0/syncfile/savefile/' + email + '/' + file_name)
         async_send_data.daemon = True
         async_send_data.start()
         print "+++++ send save file data to clouds"
+        # wait for all listen_ack processes
+        for p in thread_listen_ready_list:
+            p.join()
 
-        # Start listen to ACK for temporary saving a file
-        # call REST API of each cloud in order to save the file temporary
-        # wait for all acks to come in -> join all listen threads
-        # ---> all clouds have successfully saved the file temporary
-        #
-        # Start listen to ACK wether commit was successfull (copy temporary file to actual file)
-        # send out the commit message via etcd
-        # wait for all acks to come in -> join all listen threads
-        # ---> all clouds have sucessfully copied the temp file to the actual file
-        # ---> return 200
+        etcd_cloud_hoster = cloud_hoster
+        # evaluate results from queue
+        for i in range(0, thread_counter_clouds):
+            result = async_receive_queue.get()
+            for r in result:
+                if result[r][0]:
+                    etcd_cloud_hoster[r][0] = True
+        print"++++++++ all clouds have saved the file"
+
 
     response = "200"
     # if not storageinterface.upload_from_text(bucket_id, file_name, content):
     # response = "500"
+    dbSession.remove()
     return response
 
 
@@ -997,6 +887,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
     # 2 check if this file really exists
     element = dbSession.query(Userfile).filter((Userfile.folder == bucket_id), (Userfile.name == file_name)).first()
     if element is None:
+        dbSession.remove()
         return "404"
     print(element.name)
     # 3 get this file again, just to check with right permissions
@@ -1007,6 +898,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
                                                            Userfile.folder == bucket_id,
                                                            Userfile.name == file_name).first()
     if file_ is None:
+        dbSession.remove()
         return '403'  # because file exists, this means user has no right to manipulate
     print(file_.Userfile.name)
     # 4 send new element
@@ -1015,6 +907,7 @@ def rest_overwrite_file_from_text(bucket_id, file_name):
     if not storageinterface.upload_from_text(bucket_id, file_name, content):
         response = "500"
     print(response)
+    dbSession.remove()
     return response
 
 
@@ -1037,6 +930,7 @@ def rest_delete_file(bucket_id, file_name):
     # 3 check if this combination really exists
     elements = dbSession.query(Userfile).filter((Userfile.folder == bucket_id), (Userfile.name == file_name)).first()
     if elements is None:
+        dbSession.remove()
         return "404"
     # 4 try a delete-atempt
     # ATT [here an exception can lead to desynchronized states]
@@ -1048,7 +942,9 @@ def rest_delete_file(bucket_id, file_name):
             dbSession.delete(ref)
         dbSession.delete(elements)
         dbSession.commit()
+        dbSession.remove()
         return "200"
+    dbSession.remove()
     return "500"  # something went wrong
 
 
@@ -1075,6 +971,7 @@ def rest_share_list_files_read():
     for _iter_ in files:
         data.append([_iter_.User.username, _iter_.Userfile.name, _iter_.User.id])
     json_string = json.dumps(data)
+    dbSession.remove()
     return json_string
 
 
@@ -1102,6 +999,7 @@ def rest_share_list_files_write():
     for _iter_ in files:
         data.append([_iter_.User.username, _iter_.Userfile.name, _iter_.User.id])
     json_string = json.dumps(data)
+    dbSession.remove()
     return json_string
 
 
@@ -1115,8 +1013,16 @@ def rest_share_file(bucket_id, file_name):
     :param string file_name: The name of the file
     :return file: a status response
     """
+
+    print "rest_share_file: ..."
     username = request.json['username']
     permission = request.json['permission']
+
+
+    print "username: " + username
+    print "permission: " + permission
+    print "bucket id: " + str(bucket_id)
+    print "filename: " + file_name
 
     # 1. check if logged in user is owner of file_name
     if g.user is None or not g.user.is_authenticated():
@@ -1127,25 +1033,53 @@ def rest_share_file(bucket_id, file_name):
     # 3. check if file in table Userfile exists
     userfile = dbSession.query(Userfile).filter(Userfile.folder == bucket_id, Userfile.name == file_name).first()
     if userfile is None:
+        dbSession.remove()
         return "404"  # Not found
     # 4. check if user_id in table User exists
     print("check user")
     user = dbSession.query(User).filter(User.username == username).first()
     if user is None:
+        dbSession.remove()
         return "404"  # Not found
     # 5. check if permission allready exists in table UserUserfile
-    useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
-                                                        UserUserfile.userfile_id == userfile.id).first()
-    if useruserfile is not None:
-        useruserfile.permission = permission
-        dbSession.commit()
+
+    #user_file_owner
+    user_file_owner = dbSession.query(User).filter(User.id == bucket_id).first()
+
+    data = {
+        'name_file_owner': user_file_owner.username,
+        'permission': permission,
+        'bucket_id': bucket_id,
+        'file_name': file_name,
+        'username': username
+    }
+
+    print "Username Owner: " + user_file_owner.username
+    print "file_name: " + file_name
+    print "username: " + username
+
+    rest_url = '/storage/api/v1.0/syncdb/sharefilepermission'
+
+    etcd_string = 'setPermission/'+ username + '_' + file_name + '/'
+
+    res_db_sync = db_cloud_sync(etcd_string, rest_url, data)
+
+    etcd_client = init_etcd_connection()
+   
+    permission_dir = etcd_client.get(etcd_string)
+    for child in permission_dir.children:
+        etcd_client.delete(child.key)
+    permission_dir = etcd_client.get(permission_dir.key)
+    if permission_dir is not None:
+        etcd_client.delete(permission_dir.key, dir=True)
+
+    if res_db_sync != 1:
+        ret_val = "503"
     else:
-        # 5. set permission in table UserUserfile
-        print("set useruserfile")
-        useruserfile = UserUserfile(userfile, user, permission)
-        dbSession.add(useruserfile)
-        dbSession.commit()
-    return "200"
+        ret_val = "200"
+
+    dbSession.remove()
+    return ret_val
 
 
 '''
@@ -1203,19 +1137,131 @@ def rest_syncdb_register_user():
         # create container/bucket for the new registered user
         storageinterface.create_container(user.get_id())
         etcd_client.write(user_key, 3)
+    dbSession.remove()
     return "200"
 
 
-@app.route('/storage/api/v1.0/syncfile/savefile/<int:bucket_id>/<string:file_name>', methods=['POST'])
-def rest_syncfile_save_file(bucket_id, file_name):
+@app.route('/storage/api/v1.0/syncdb/sharefilepermission', methods=['POST'])
+def rest_syncdb_share_file_permission():
+    name_file_owner = request.json['name_file_owner']
+    share_username = request.json['username']
+    permission = request.json['permission']
+    file_name = request.json['file_name']
+
+    etcd_client = init_etcd_connection()
+    commit_key = '/setPermission/' + share_username + '_' + file_name + '/' + 'commit'
+
+    async_commit_queue = Queue()
+    async_commit_data = FuncThread(listen_commit_status, etcd_client, commit_key, async_commit_queue)
+    async_commit_data.daemon = True
+    async_commit_data.start()
+
+
+    key_path = 'setPermission/' + share_username + '_' + file_name + '/' + 'ack_' + cloudplatform
+
+    print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
+    print "key: " + key_path
+    etcd_client.write(key_path, 2)
+    print ">>>>> REST API: wrote to etcd..."
+    print ">>>>>>>>> REST API >>>>>>>>>>>>>>"
+
+    async_commit_data.join()
+    commit_res = async_commit_queue.get()
+    print ">>>> commit result: " + commit_res
+
+
+
+    if commit_res == "1":
+
+        user_file_owner = dbSession.query(User).filter(User.username == name_file_owner).first()
+        print "got owner: " + str(user_file_owner.id)
+        user = dbSession.query(User).filter(User.username == share_username).first()
+        print "shared user: " + str(user.id)
+        userfile = dbSession.query(Userfile).filter(Userfile.folder == user_file_owner.id, Userfile.name == file_name).first()
+        print "userfile" + str(userfile.id)
+        
+        useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user.id,
+                                                        UserUserfile.userfile_id == userfile.id).first()
+        print "useruserfile"
+        if useruserfile is not None:
+            print "entry available"
+            useruserfile.permission = permission
+            dbSession.commit()
+        else:
+            print("set useruserfile")
+            useruserfile = UserUserfile(userfile, user, permission)
+            dbSession.add(useruserfile)
+            dbSession.commit()
+            
+        etcd_client.write(key_path, 3)
+
+    dbSession.remove()
+        
+    return "200"
+
+
+@app.route('/storage/api/v1.0/syncfile/savefile_tmp/<string:user_email>/<string:file_name>', methods=['POST'])
+def rest_syncfile_save_file_tmp(user_email, file_name):
+    print "rest_syncfile_save_file_tmp: ..."
     if request.method == 'POST':
+        # set tmp suffix for saving the file only temporary
+        file_name += "_tmp"
+
         # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
         userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
-        user = dbSession.query(User).filter(User.id == bucket_id).first()
+        user = dbSession.query(User).filter(User.email == user_email).first()
+        user_id = user.get_id()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user_id)
         if userfile is None:
             if user is None:
                 return "403"  # Forbidden
-            userfile = Userfile(bucket_id, file_name)
+            userfile = Userfile(user_id, file_name)
+            useruserfile = UserUserfile(userfile, user, 6)
+            dbSession.add(userfile)
+            dbSession.add(useruserfile)
+            dbSession.commit()
+
+        # if file exists -> check if file_name, user_id is found with right permission in UserUserfiles
+        else:
+            useruserfile = dbSession.query(UserUserfile).filter(UserUserfile.user_id == user_id,
+                                                                UserUserfile.userfile_id == userfile.id).first()
+            if useruserfile is None or useruserfile.permission < 6:
+                print("return 403")
+                dbSession.remove()
+                return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
+
+        content = request.json['content']
+        print("-------------------------------------------------------------")
+        print("Received an external POST in order to save following file temporarily")
+        print("content: " + content)
+        print("user email: " + user_email)
+        print("bucketid: " + str(user_id))
+        print("file_name: " + file_name)
+        print("-------------------------------------------------------------")
+
+        response = "500"
+        if storageinterface.upload_from_text(user_id, file_name, content):
+            response = "200"
+            file_string = "saveFile_tmp/" + user_email + '_' + file_name + '/' + 'ack_' + cloudplatform
+            etcd_client = init_etcd_connection()
+            etcd_client.write(file_string, 2)
+        dbSession.remove()
+    return response
+
+
+@app.route('/storage/api/v1.0/syncfile/savefile/<string:user_email>/<string:file_name>', methods=['POST'])
+def rest_syncfile_save_file(user_email, file_name):
+    print "rest_syncfile_save_file: ..."
+    if request.method == 'POST':
+        # if file doesnt exists -> logged in user must be bucket_id -> add permission to UserUserfiles
+        userfile = dbSession.query(Userfile).filter(Userfile.name == file_name).first()
+        user = dbSession.query(User).filter(User.email == user_email).first()
+        user_id = user.get_id()
+        print("-------------> found user with email : " + user_email + " and bucket id : " + user_id)
+        if userfile is None:
+            if user is None:
+                return "403"  # Forbidden
+            userfile = Userfile(user_id, file_name)
             useruserfile = UserUserfile(userfile, user, 6)
             dbSession.add(userfile)
             dbSession.add(useruserfile)
@@ -1227,20 +1273,45 @@ def rest_syncfile_save_file(bucket_id, file_name):
                                                                 UserUserfile.userfile_id == userfile.id).first()
             if useruserfile is None or useruserfile.permission < 6:
                 print("return 403")
+                dbSession.remove()
                 return '403'  # redirect(url_for('403'))  # No permission found or permission not sufficient
 
-        content = request.json['content']
+        file_name_tmp = file_name+"_tmp"
+        tmp_value = ""
+        elements = dbSession.query(Userfile).filter((Userfile.folder == user_id), (Userfile.name == file_name_tmp)).first()
+        if elements is None:
+            dbSession.remove()
+            return "404"
+        if storageinterface.file_exists(user_id, file_name_tmp):
+            # get tmp file that was saved before
+
+            # get value of tmp file
+            tmp_value = storageinterface.download_file_to_text(user_id, file_name_tmp)
+
+            # delete tmp file
+            storageinterface.delete_file(user_id, file_name_tmp)
+            # no cascade possible, therfore we must remove the foreign-key there manually
+            references = dbSession.query(UserUserfile).filter(UserUserfile.userfile_id == elements.id)
+            for ref in references:
+                dbSession.delete(ref)
+            dbSession.delete(elements)
+            dbSession.commit()
+            dbSession.remove()
+        
+        #tmp_value = unicode(tmp_value,"utf-8")
+
         print("-------------------------------------------------------------")
         print("Received an external POST in order to save following file")
-        print("content: " + content)
-        print("bucketid: " + str(bucket_id))
+        print("content: " + tmp_value)
+        print("user email: " + user_email)
         print("file_name: " + file_name)
         print("-------------------------------------------------------------")
 
-        # TODO Only save this file in a temp file
-        # TODO send ACK back
-
-        response = "200"
-        if not storageinterface.upload_from_text(bucket_id, file_name, content):
-            response = "500"
-        return response
+        response = "500"
+        if storageinterface.upload_from_text(user_id, file_name, tmp_value):
+            response = "200"
+            file_string = "saveFile/" + user_email + '_' + file_name + '/' + 'ack_' + cloudplatform
+            etcd_client = init_etcd_connection()
+            etcd_client.write(file_string, 3)
+        dbSession.remove()
+    return response

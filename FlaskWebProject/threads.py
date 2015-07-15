@@ -1,11 +1,9 @@
 import threading
-import os
 from config import etcd_member
 import etcd
-from etcd import EtcdKeyNotFound
 from etcd import EtcdException
 from config import cloudplatform
-from config import cloud_hoster
+
 
 class EtcdDBListener(threading.Thread):
 
@@ -28,19 +26,16 @@ class EtcdDBListener(threading.Thread):
                     continue
                 elif len(key_level) == 3:
                     ack_key = new_item.key+'/ack_'+cloudplatform
-                    print "####### DB SYNC Listener ##########"
-                    print "New Key: " + new_item.key
-                    print "ACK Key: " + ack_key
-                    print "###################################"
+                    print "EtcdDBListener.run: ACK Key: " + ack_key
                     client.write(ack_key, 1)
             except EtcdException:
                 continue
 
 
-
 def init_etcd_connection():
+    print "EtcdDBListener.init_etcd_connection: etcd member 0: " + etcd_member[0]
     etcd_client = etcd.Client(host=etcd_member[0], protocol='http', port=4001, allow_reconnect=True)
-    #etcd_client.machines
+    # etcd_client.machines
     return etcd_client
 
 

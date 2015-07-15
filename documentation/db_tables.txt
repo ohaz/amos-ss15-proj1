@@ -1,0 +1,31 @@
+DROP TABLE `user_userfile`;
+DROP TABLE `user`;
+DROP TABLE `userfile`;
+
+CREATE TABLE `user` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(64) DEFAULT NULL,
+  `email` varchar(120) DEFAULT NULL,
+  `password` varchar(120) DEFAULT NULL,
+  `sso` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `ix_user_email` (`email`),
+  UNIQUE KEY `ix_user_username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `userfile` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `folder` varchar(64) DEFAULT NULL,
+  `name` varchar(120) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+CREATE TABLE `user_userfile` (
+  `user_id` int(11) NOT NULL,
+  `userfile_id` int(11) NOT NULL,
+  `permission` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`user_id`,`userfile_id`),
+  KEY `userfile_id` (`userfile_id`),
+  CONSTRAINT `user_userfile_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+  CONSTRAINT `user_userfile_ibfk_2` FOREIGN KEY (`userfile_id`) REFERENCES `userfile` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
