@@ -1298,7 +1298,7 @@ def rest_syncfile_save_file(user_email, file_name):
             dbSession.commit()
             dbSession.remove()
         
-        tmp_value = unicode(tmp_value,"utf-8")
+        #tmp_value = unicode(tmp_value,"utf-8")
 
         print("-------------------------------------------------------------")
         print("Received an external POST in order to save following file")
