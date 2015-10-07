@@ -57,7 +57,7 @@ def apply_remote():
             os.chdir(os.path.join(source,"repo"))
             
             #clean our copy of repository
-            command = ["rm","-r",".git"]
+            command = ["rm","-f","-r",os.path.join(source,"repo/.git")]
             subprocess.call(command)
             
             #copy configfiles of google_remote to our repo
@@ -78,10 +78,10 @@ def apply_remote():
             os.chdir(source)
             
             # remove garbage repos
-            command = ["rm","-r","repo"]
+            command = ["rm","-f","-r","repo"]
             subprocess.call(command)
             
-            command = ["rm","-r","repo_google"]
+            command = ["rm","-f","-r","repo_google"]
             subprocess.call(command)
 
         except :
